@@ -1,4 +1,4 @@
-local addon, fu = ...
+local _, fu = ...
 local classId, e = fu.classId, fu.e
 local addAuras, updateAuras, removeAuras = {}, {}, {} -- 添加、更新、移除光环
 local creat = fu.updateOrCreatTextureByIndex
@@ -539,21 +539,14 @@ local auras = {
         },
         ["冰川尖刺！"] = {
             remaining = 0,
-            duration = 0,
+            duration = 60,
             expirationTime = nil,
-            isIcon = 1,
             addAuras = {
-                [116] = { -- 寒冰箭
-                    event = e["图标改变"],
-                    overrideSpellID = 199786,
-                },
+                [199786] = { event = e["法术冷却"] },
             },
             updateAuras = nil,
             removeAuras = {
-                [116] = { -- 寒冰箭
-                    event = e["图标改变"],
-                    overrideSpellID = 199786,
-                },
+                [199786] = { event = e["施法成功"] }, -- 冰枪术
             },
         },
     },
@@ -771,9 +764,9 @@ local auras = {
     },
 }
 
-fu.Auras = {}
+Fuyutsui.Auras = {}
 do
-    fu.Auras = auras[classId] or {}
+    Fuyutsui.Auras = auras[classId] or {}
     local function indexAura(target, auraName, auraData)
         for spellId, info in pairs(auraData) do
             local ev = info.event
@@ -791,7 +784,7 @@ do
         end
     end
 
-    for name, data in pairs(fu.Auras) do
+    for name, data in pairs(Fuyutsui.Auras) do
         if data.addAuras then
             indexAura(addAuras, name, data.addAuras)
         end
@@ -812,7 +805,7 @@ local function applyAuraMapForSpellEvent(auraMap, castBarID)
     end
     local now = GetTime()
     for auraName, info in pairs(auraMap) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura and ((not info.castBar) or castBarID) then
             if aura.duration then
                 aura.expirationTime = now + aura.duration
@@ -837,7 +830,7 @@ local function updateAuraMapForSpellEvent(auraMap, castBarID)
     end
     local now = GetTime()
     for auraName, info in pairs(auraMap) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura and ((not info.castBar) or castBarID) then
             if aura.count and info.step then
                 if info.step > 0 then
@@ -860,7 +853,7 @@ local function clearAurasFromRemoveMap(removeMap, resetCount)
         return
     end
     for auraName in pairs(removeMap) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura then
             if resetCount and aura.count then
                 aura.count = aura.countMin
@@ -902,7 +895,7 @@ local function updateAuraByIconMap(map, spellID)
     local hasOverride = false
     local overrideSpellID = C_Spell.GetOverrideSpell(spellID)
     for auraName, info in pairs(map) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if overrideSpellID and info.overrideSpellID and overrideSpellID == info.overrideSpellID then
             hasOverride = true
         end
@@ -942,7 +935,7 @@ function Fuyutsui:updateAuraByIcon(spellID)
 end
 
 function Fuyutsui:updateAuraIconByEnteringWorld()
-    for name, info in pairs(fu.Auras) do
+    for name, info in pairs(Fuyutsui.Auras) do
         if info.isIcon then
             if info.addAuras then
                 for spellId, i in pairs(info.addAuras) do
@@ -975,7 +968,7 @@ local function updateAuraByOverrideMap(map, overrideSpellID)
     end
 
     for auraName, info in pairs(map) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura then
             if overrideSpellID and aura.duration and overrideSpellID == info.overrideSpellID then
                 if aura.duration then
@@ -1034,7 +1027,7 @@ function Fuyutsui:updateAuraByOverlayGlow(spellID)
     local now = GetTime()
     local isSpellOverlayed = C_SpellActivationOverlay.IsSpellOverlayed(spellID)
     for auraName in pairs(map) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura then
             if isSpellOverlayed and aura.duration then
                 aura.expirationTime = now + aura.duration
@@ -1048,7 +1041,7 @@ end
 -- 通过每帧更新光环
 function Fuyutsui:updateAura()
     local currentTime = GetTime()
-    for name, info in pairs(fu.Auras) do
+    for name, info in pairs(Fuyutsui.Auras) do
         local expTime = info.expirationTime
         if expTime then
             if info.count and info.count <= 0 then

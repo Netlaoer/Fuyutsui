@@ -12,34 +12,12 @@ local creat = fu.updateOrCreatTextureByIndex
 local rc = LibStub("LibRangeCheck-3.0")
 
 local state, spells, group, group_list, target, nameplate = {}, {}, {}, {}, {}, {}
-local fixed, group_blocks, blocks = {}, nil, nil
+local group_blocks, blocks = {}, {}
 local failedSpell, failedSpellId, failedSpellTimer, updateIndex = nil, nil, nil, 1
 local updateSpecInfo, createClassMacro
 local roleMap, enumPowerType, spellsList = fu.roleMap, fu.EnumPowerType, fu.spellsList
 local fallbackColor = CreateColor(0, 0, 1)
 local specRange = 40
-
-fixed["锚点"] = 1
-fixed["职业"] = 2
-fixed["专精"] = 3
-fixed["有效性"] = 4
-fixed["战斗"] = 5
-fixed["移动"] = 6
-fixed["施法"] = 7
-fixed["引导"] = 8
-fixed["蓄力"] = 9
-fixed["蓄力层数"] = 10
-fixed["生命值"] = 11
-fixed["能量值"] = 12
-fixed["一键辅助"] = 13
-fixed["法术失败"] = 14
-fixed["目标类型"] = 15
-fixed["队伍类型"] = 16
-fixed["队伍人数"] = 17
-fixed["首领战"] = 18
-fixed["难度"] = 19
-fixed["英雄天赋"] = 20
-fu.fixedBlocks = fixed
 
 -- ================================================================
 --                          创建颜色曲线
@@ -121,7 +99,42 @@ end
 -- ================================================================
 --                          玩家信息
 -- ================================================================
--- https://github.com/waynebian01/Fuyutsui
+
+-- 载入玩家blocks
+function Fuyutsui:loadPlayerBlocks(specIndex)
+    if not specIndex then return end
+    local t = self.ClassBlocks[specIndex]
+    if not t then return end
+    blocks = {
+        blocks = {},
+        auras = {},
+        spells = {},
+    }
+    for k, v in pairs(t) do
+        if v.type == "block" then
+            blocks.blocks[v.name] = k
+        elseif v.type == "aura" then
+            blocks.auras[v.name] = k
+        elseif v.type == "spell" then
+            if not blocks.spells[v.spellId] then
+                blocks.spells[v.spellId] = {}
+            end
+            blocks.spells[v.spellId].index = k
+            blocks.spells[v.spellId].name = v.name
+            if v.charge then
+                blocks.spells[v.spellId].charge = k
+            end
+        elseif v.type == "group" then
+            blocks.groups = {}
+            blocks.groups.start = k
+            blocks.groups.num = v.num
+            blocks.groups.healthPercent = v.healthPercent
+            blocks.groups.role = v.role
+            blocks.groups.dispel = v.dispel
+            blocks.groups.aura = v.aura
+        end
+    end
+end
 
 -- 创建玩家bar信息
 local function updatePlayerBarInfo()
@@ -156,9 +169,9 @@ local function getPlayerInfo()
     group_blocks = fu.group_blocks        -- 更新队伍块
     blocks = fu.blocks                    -- 更新色块
     -- 创建固定色块
-    creat(fixed["锚点"], 0)
-    creat(fixed["职业"], fu.classId / 255)
-    creat(fixed["专精"], specIndex / 255)
+    creat(blocks["锚点"], 0)
+    creat(blocks["职业"], fu.classId / 255)
+    creat(blocks["专精"], specIndex / 255)
 end
 
 -- 各法术的驱散能力映射
@@ -231,7 +244,7 @@ local function updateSpellKnown()
                 index = info
             end
         end
-        creat(fixed["英雄天赋"], index / 255)
+        creat(blocks["英雄天赋"], index / 255)
     end
 
     for debuffType, spellIDs in pairs(dispelAbilities) do
@@ -286,13 +299,13 @@ local function updatePlayerSpecInfo()
     updateSpellKnown()
     updatePlayerBarInfo()
     -- 更新专精色块
-    creat(fixed["专精"], specIndex / 255)
+    creat(blocks["专精"], specIndex / 255)
 end
 
 -- 更新玩家有效性
 local function updatePlayerValid()
     state.valid = not state.isDead and not state.mounted and not state.isChatOpen
-    creat(fixed["有效性"], state.valid and 1 / 255 or 0)
+    creat(blocks["有效性"], state.valid and 1 / 255 or 0)
 end
 
 local function updatePlayerMounted()
@@ -304,13 +317,13 @@ end
 -- 更新玩家战斗状态
 local function updatePlayerCombat()
     state.combat = UnitAffectingCombat("player")
-    creat(fixed["战斗"], state.combat and 1 / 255 or 0)
+    creat(blocks["战斗"], state.combat and 1 / 255 or 0)
 end
 
 -- 更新玩家移动状态
 local function updatePlayerMoving(boolean)
     state.moving = boolean
-    creat(fixed["移动"], state.moving and 1 / 255 or 0)
+    creat(blocks["移动"], state.moving and 1 / 255 or 0)
 end
 
 local function updatePlayerState()
@@ -331,10 +344,10 @@ function Fuyutsui:updatePlayerCastingInfo()
             local castingDurationColor = cast:EvaluateElapsedDuration(curve10)
             ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = castingDurationColor:GetRGB()
-            creat(fixed["施法"], b)
+            creat(blocks["施法"], b)
         end
     else
-        creat(fixed["施法"], 0)
+        creat(blocks["施法"], 0)
     end
 end
 
@@ -346,10 +359,10 @@ function Fuyutsui:updatePlayerChannelingInfo()
             local channelDurationColor = channel:EvaluateRemainingDuration(curve10)
             ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = channelDurationColor:GetRGB()
-            creat(fixed["引导"], b)
+            creat(blocks["引导"], b)
         end
     else
-        creat(fixed["引导"], 0)
+        creat(blocks["引导"], 0)
     end
 end
 
@@ -362,22 +375,22 @@ function Fuyutsui:updatePlayerEmpowerInfo()
             local empowerDurationColor = empowerDuration:EvaluateRemainingDuration(curve10)
             ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = empowerDurationColor:GetRGB()
-            creat(fixed["蓄力"], b)
+            creat(blocks["蓄力"], b)
         end
         if empowerStages then
             for k, v in pairs(empowerStages) do
                 local empower = v:EvaluateRemainingDuration(curve10)
                 ---@diagnostic disable-next-line: param-type-mismatch
                 local _, _, b = empower:GetRGB()
-                creat(fixed["蓄力层数"], (k - 1) / 255)
+                creat(blocks["蓄力层数"], (k - 1) / 255)
                 if b > 0 then
                     break
                 end
             end
         end
     else
-        creat(fixed["蓄力"], 0)
-        creat(fixed["蓄力层数"], 0)
+        creat(blocks["蓄力"], 0)
+        creat(blocks["蓄力层数"], 0)
     end
 end
 
@@ -405,7 +418,7 @@ local function updatePlayerHealth()
     state.healthPercent = UnitHealthPercent("player", false, curve100)
     ---@diagnostic disable-next-line: param-type-mismatch
     local _, _, b = state.healthPercent:GetRGB()
-    creat(fixed["生命值"], b)
+    creat(blocks["生命值"], b)
 end
 
 -- 更新玩家能量信息
@@ -414,7 +427,7 @@ local function updatePlayerPower(powerType)
         state.powerPercent = UnitPowerPercent("player", enumPowerType[state.powerType], nil, curve100)
         ---@diagnostic disable-next-line: param-type-mismatch
         local _, _, b = state.powerPercent:GetRGB()
-        creat(fixed["能量值"], b)
+        creat(blocks["能量值"], b)
     end
     if powerType == "COMBO_POINTS" and blocks and blocks["连击点"] then
         local power = UnitPower("player", 4)
@@ -432,16 +445,16 @@ end
 -- 更新玩家配置
 local function updatePlayerConfig()
     C_Timer.After(3, function()
-        if blocks then
-            if fu.blocks["爆发开关"] then
-                creat(fu.blocks["爆发开关"], FuyutsuiDB.cooldowns / 255)
-            end
-            if fu.blocks["AOE开关"] then
-                creat(fu.blocks["AOE开关"], FuyutsuiDB.aoeMode / 255)
-            end
-            if fu.blocks["输出模式"] then
-                creat(fu.blocks["输出模式"], FuyutsuiDB.dpsMode / 255)
-            end
+        local c = fu.db and fu.db.char
+        if not c or not blocks then return end
+        if fu.blocks["爆发开关"] then
+            creat(fu.blocks["爆发开关"], (c.cooldowns or 0) / 255)
+        end
+        if fu.blocks["AOE开关"] then
+            creat(fu.blocks["AOE开关"], (c.aoeMode or 0) / 255)
+        end
+        if fu.blocks["输出模式"] then
+            creat(fu.blocks["输出模式"], (c.dpsMode or 0) / 255)
         end
     end)
 end
@@ -481,9 +494,9 @@ end
 local function updateEncounterID(encounterID, difficultyID)
     local id = fu.bossID and fu.bossID[encounterID] or 0
     if id then
-        creat(fixed["首领战"], id / 255)
+        creat(blocks["首领战"], id / 255)
     end
-    creat(fixed["难度"], difficultyID / 255)
+    creat(blocks["难度"], difficultyID / 255)
 end
 
 -- 更新玩家[一键辅助]
@@ -491,9 +504,9 @@ function Fuyutsui:updatePlayerAssistant()
     local spellId = C_AssistedCombat.GetNextCastSpell()
     local spellIndex = spellsList[spellId] and spellsList[spellId].index or nil
     if spellIndex then
-        creat(fixed["一键辅助"], spellIndex / 255)
+        creat(blocks["一键辅助"], spellIndex / 255)
     else
-        creat(fixed["一键辅助"], 0)
+        creat(blocks["一键辅助"], 0)
     end
 end
 
@@ -558,12 +571,12 @@ local function updateSpellFailed(spellID)
     end
 
     failedSpellTimer = C_Timer.NewTimer(1.5, function()
-        creat(fixed["法术失败"], 0)
+        creat(blocks["法术失败"], 0)
         failedSpellTimer = nil
         failedSpell = nil
         failedSpellId = nil
     end)
-    creat(fixed["法术失败"], failedSpell / 255)
+    creat(blocks["法术失败"], failedSpell / 255)
 end
 
 local function updateFailedSpellBySuccess(spellID)
@@ -571,7 +584,7 @@ local function updateFailedSpellBySuccess(spellID)
     failedSpell = nil
     failedSpellId = nil
     print("|cff00ff00插入技能: |r", GetSpellName(spellID))
-    creat(fixed["法术失败"], 0)
+    creat(blocks["法术失败"], 0)
 end
 
 local diseaseJudgeTimer = nil
@@ -641,7 +654,7 @@ local function updateTargetValid()
         targetType = getTargetDispelType()
     end
 
-    creat(fixed["目标类型"], targetType)
+    creat(blocks["目标类型"], targetType)
 end
 
 -- 更新目标是否可以攻击
@@ -1003,7 +1016,7 @@ end
 
 local function updateGroupCount()
     local count = GetNumGroupMembers()
-    creat(fixed["队伍人数"], count / 255)
+    creat(blocks["队伍人数"], count / 255)
 end
 
 local function updateGroupType()
@@ -1013,7 +1026,7 @@ local function updateGroupType()
     elseif UnitInParty("player") then
         index = 46
     end
-    creat(fixed["队伍类型"], index / 255)
+    creat(blocks["队伍类型"], index / 255)
 end
 
 local function updateGroup()

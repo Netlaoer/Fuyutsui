@@ -34,9 +34,8 @@ function fu.updateSpecInfo()
                 },
                 ["冰川尖刺！"] = {
                     index = 32,
-                    auraRef = fu.updateAuras.byIcon[116],
-                    showKey = "isIcon",
-                    name = "冰川尖刺！",
+                    auraRef = fu.Auras["冰川尖刺！"],
+                    showKey = "remaining",
                 },
                 ["冰冷智慧"] = {
                     index = 33,

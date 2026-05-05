@@ -2,16 +2,23 @@ local _, fu = ...
 Fuyutsui = LibStub("AceAddon-3.0"):NewAddon("Fuyutsui", "AceEvent-3.0", "AceConsole-3.0")
 local AC = LibStub("AceConfig-3.0") -- AceConfig-3.0 是 Ace3 库中的一个模块，用于注册和管理配置选项
 local ACD = LibStub("AceConfigDialog-3.0")
-local className, classFilename, classId = UnitClass("player")
-local specIndex = C_SpecializationInfo.GetSpecialization()
-print("职业:", className, "职业文件:", classFilename, "职业ID:", classId, "专精索引:", specIndex)
-fu.className, fu.classFilename, fu.classId = className, classFilename, classId
-fu.specIndex = specIndex
 
 function Fuyutsui:OnInitialize()
     -- 使用“默认”配置文件，而非特定角色的配置文件。
     -- https://www.wowace.com/projects/ace3/pages/api/ace-db-3-0
     self.db = LibStub("AceDB-3.0"):New("FuyutsuiADB", self.defaults, true)
+    self.state = {}
+    --- 从旧版 ## SavedVariablesPerCharacter: FuyutsuiDB 迁入 db.char（仅一次）
+    do
+        local legacy = rawget(_G, "FuyutsuiDB")
+        if type(legacy) == "table" then
+            local ch = self.db.char
+            if legacy.aoeMode ~= nil then ch.aoeMode = legacy.aoeMode end
+            if legacy.cooldowns ~= nil then ch.cooldowns = legacy.cooldowns end
+            if legacy.dpsMode ~= nil then ch.dpsMode = legacy.dpsMode end
+            wipe(legacy)
+        end
+    end
     -- 注册一个选项表，并将其添加到暴雪选项窗口中。
     -- https://www.wowace.com/projects/ace3/pages/api/ace-config-3-0
     AC:RegisterOptionsTable("Fuyutsui_Options", self.options)
@@ -75,7 +82,6 @@ function Fuyutsui:OnEnable()
     self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE")
     self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_SHOW")
     self:RegisterEvent("SPELL_ACTIVATION_OVERLAY_HIDE")
-
     self:RegisterEvent("UPDATE_BINDINGS")
     self:RegisterEvent("SPELLS_CHANGED")
     self:RegisterEvent("ACTIONBAR_HIDEGRID")
@@ -88,78 +94,78 @@ function Fuyutsui:OnEnable()
 end
 
 function Fuyutsui:GetCharacterInfo()
+    local className, classFilename, classId = UnitClass("player")
+    local specIndex = C_SpecializationInfo.GetSpecialization()
+    local specID, specName, _, _, role = C_SpecializationInfo.GetSpecializationInfo(specIndex)
+
+    self:Print("职业:", className, "职业文件名:", classFilename, "职业ID:", classId,
+        "专精索引:", specIndex, "专精ID:", specID, "专精名称:", specName, "专精角色:", role)
     self.db.char.level = UnitLevel("player")
+    self.state.name = UnitName("player")
+    self.state.GUID = UnitGUID("player")
+    self.state.className = className
+    self.state.classFilename = classFilename
+    self.state.classId = classId
+    self.state.specIndex = specIndex
+    self.state.specID = specID
+    self.state.specName = specName
+    self.state.specRole = role
 end
 
--- 如果配置不存在，则初始化
-if not FuyutsuiDB then
-    FuyutsuiDB = {
-        aoeMode = 0,
-        cooldowns = 0,
-        dpsMode = 0
-    }
+local function CharCfg()
+    return Fuyutsui.db and Fuyutsui.db.char
 end
-
--- 将保存的数据读回本地变量
-FuyutsuiDB.aoeMode = FuyutsuiDB.aoeMode
-FuyutsuiDB.cooldowns = FuyutsuiDB.cooldowns
-FuyutsuiDB.dpsMode = FuyutsuiDB.dpsMode
-
--- 根据读取到的数据初始化界面/状态
--- 调用一次以同步你代码中的 fu.blocks 逻辑
-FuyutsuiDB = {
-    aoeMode = 0,
-    cooldowns = 0,
-    dpsMode = 0,
-}
 
 local function SaveConfig()
-    -- 确保全局变量已初始化
-    FuyutsuiDB.aoeMode = FuyutsuiDB.aoeMode or 0
-    FuyutsuiDB.cooldowns = FuyutsuiDB.cooldowns or 0
-    FuyutsuiDB.dpsMode = FuyutsuiDB.dpsMode or 0
+    local c = CharCfg()
+    if not c then return end
+    c.aoeMode = c.aoeMode or 0
+    c.cooldowns = c.cooldowns or 0
+    c.dpsMode = c.dpsMode or 0
 end
 
-local function switchCooldown()
-    if FuyutsuiDB.cooldowns == 0 then
+--- 与斜杠 / 配置界面一致：print、同步顶部像素、规范化 db.char
+function Fuyutsui:SwitchCooldown()
+    local c = self.db and self.db.char
+    if not c then return end
+    if c.cooldowns == 0 then
         print("|cff00ff00[Fuyutsui]|r 爆发已|cffff0000关闭|r") -- 修改"关闭"为红色
     else
         print("|cff00ff00[Fuyutsui]|r 爆发已|cff00ff00开启|r")
     end
     if fu.blocks and fu.blocks["爆发开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["爆发开关"], FuyutsuiDB.cooldowns / 255)
+        fu.updateOrCreatTextureByIndex(fu.blocks["爆发开关"], c.cooldowns / 255)
     end
-    SaveConfig() -- 保存
+    SaveConfig()
 end
 
-local function switchAoeMode()
-    if FuyutsuiDB.aoeMode == 0 then
+function Fuyutsui:SwitchAoeMode()
+    local c = self.db and self.db.char
+    if not c then return end
+    if c.aoeMode == 0 then
         print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00自动|r模式！")
-    elseif FuyutsuiDB.aoeMode == 1 then
+    elseif c.aoeMode == 1 then
         print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00单体|r模式！")
     end
     if fu.blocks and fu.blocks["AOE开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], FuyutsuiDB.aoeMode / 255)
+        fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], c.aoeMode / 255)
     end
-    SaveConfig() -- 保存
+    SaveConfig()
 end
 
-local function switchDpsMode()
-    if FuyutsuiDB.dpsMode == 0 then
+function Fuyutsui:SwitchDpsMode()
+    local c = self.db and self.db.char
+    if not c then return end
+    if c.dpsMode == 0 then
         print("|cff00ff00[Fuyutsui]|r 输出模式已修改为|cff00ff00官方一键辅助|r") -- 修改"关闭"为红色
     else
         print("|cff00ff00[Fuyutsui]|r 输出模式已修改为|cff00ff00手动编写逻辑|r")
     end
     if fu.blocks and fu.blocks["输出模式"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["输出模式"], FuyutsuiDB.dpsMode / 255)
+        fu.updateOrCreatTextureByIndex(fu.blocks["输出模式"], c.dpsMode / 255)
     end
-    SaveConfig() -- 保存
+    SaveConfig()
 end
-
---- 供 gui.lua 等界面在改 FuyutsuiDB 后调用，与斜杠命令一致（含 print、像素、保存）
-fu.switchCooldown = switchCooldown
-fu.switchAoeMode = switchAoeMode
-fu.switchDpsMode = switchDpsMode
 
 --- AceConsole：由 RegisterChatCommand("fu"|"fuyutsui", "SlashCommand") 分发，勿再手写 SlashCmdList
 function Fuyutsui:SlashCommand(input, editbox)
@@ -188,33 +194,43 @@ function Fuyutsui:SlashCommand(input, editbox)
     end
 
     -- 游戏内功能（原 Fuyutsui_SlashHandler）
+    local c = self.db and self.db.char
     if command == "cd" then
-        FuyutsuiDB.cooldowns = (FuyutsuiDB.cooldowns == 0) and 1 or 0
-        switchCooldown()
+        if not c then return end
+        c.cooldowns = (c.cooldowns == 0) and 1 or 0
+        self:SwitchCooldown()
     elseif command == "cd on" then
-        FuyutsuiDB.cooldowns = 1
-        switchCooldown()
+        if not c then return end
+        c.cooldowns = 1
+        self:SwitchCooldown()
     elseif command == "cd off" then
-        FuyutsuiDB.cooldowns = 0
-        switchCooldown()
+        if not c then return end
+        c.cooldowns = 0
+        self:SwitchCooldown()
     elseif command == "aoemode" then
-        FuyutsuiDB.aoeMode = (FuyutsuiDB.aoeMode == 0) and 1 or 0
-        switchAoeMode()
+        if not c then return end
+        c.aoeMode = (c.aoeMode == 0) and 1 or 0
+        self:SwitchAoeMode()
     elseif command == "aoemode auto" then
-        FuyutsuiDB.aoeMode = 0
-        switchAoeMode()
+        if not c then return end
+        c.aoeMode = 0
+        self:SwitchAoeMode()
     elseif command == "aoemode aoe" then
-        FuyutsuiDB.aoeMode = 1
-        switchAoeMode()
+        if not c then return end
+        c.aoeMode = 1
+        self:SwitchAoeMode()
     elseif command == "dpsmode" then
-        FuyutsuiDB.dpsMode = (FuyutsuiDB.dpsMode == 0) and 1 or 0
-        switchDpsMode()
+        if not c then return end
+        c.dpsMode = (c.dpsMode == 0) and 1 or 0
+        self:SwitchDpsMode()
     elseif command == "dpsmode manual" then
-        FuyutsuiDB.dpsMode = 1
-        switchDpsMode()
+        if not c then return end
+        c.dpsMode = 1
+        self:SwitchDpsMode()
     elseif command == "dpsmode assistant" then
-        FuyutsuiDB.dpsMode = 0
-        switchDpsMode()
+        if not c then return end
+        c.dpsMode = 0
+        self:SwitchDpsMode()
     elseif command == "help" then
         print("|cff00ff00Fuyutsui|r 命令列表:")
         print("爆发开关: /fu cd")

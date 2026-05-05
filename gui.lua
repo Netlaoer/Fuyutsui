@@ -8,8 +8,16 @@ Fuyutsui.defaults = {
     },
     char = {
         level = 0,
+        --- 原 SavedVariablesPerCharacter: FuyutsuiDB，现并入 AceDB char
+        aoeMode = 0,
+        cooldowns = 0,
+        dpsMode = 0,
     },
 }
+
+local function CharCfg()
+    return Fuyutsui.db and Fuyutsui.db.char
+end
 
 local function GetClassColorStr()
     local raid = fu.classFilename and RAID_CLASS_COLORS[fu.classFilename]
@@ -187,15 +195,16 @@ end
 
 --- 与 core.lua 中 slash 逻辑一致：改 SavedVariables 后同步顶部像素
 local function SyncBlockFromDB()
-    if not fu.blocks then return end
+    local c = CharCfg()
+    if not c or not fu.blocks then return end
     if fu.blocks["爆发开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["爆发开关"], FuyutsuiDB.cooldowns / 255)
+        fu.updateOrCreatTextureByIndex(fu.blocks["爆发开关"], (c.cooldowns or 0) / 255)
     end
     if fu.blocks["AOE开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], FuyutsuiDB.aoeMode / 255)
+        fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], (c.aoeMode or 0) / 255)
     end
     if fu.blocks["输出模式"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["输出模式"], FuyutsuiDB.dpsMode / 255)
+        fu.updateOrCreatTextureByIndex(fu.blocks["输出模式"], (c.dpsMode or 0) / 255)
     end
 end
 
@@ -266,7 +275,7 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
                     type = "description",
                     order = 0,
                     name =
-                    "",
+                    "以下项保存在 |cffffffffFuyutsuiADB|r 的 |cffffffffdb.char|r（按角色），与 |cffffffff/fu cd|r、|cffffffff/fu aoemode|r、|cffffffff/fu dpsmode|r 一致。",
                 },
                 cooldowns = {
                     type = "toggle",
@@ -275,14 +284,15 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
                     desc = "开启时允许按逻辑使用爆发；关闭时对应像素会反映为关。",
                     width = "full",
                     get = function()
-                        FuyutsuiDB = FuyutsuiDB or {}
-                        return (FuyutsuiDB.cooldowns or 0) == 1
+                        local c = CharCfg()
+                        return c and ((c.cooldowns or 0) == 1) or false
                     end,
                     set = function(_, val)
-                        FuyutsuiDB = FuyutsuiDB or {}
-                        FuyutsuiDB.cooldowns = val and 1 or 0
-                        if fu.switchCooldown then
-                            fu.switchCooldown()
+                        local c = CharCfg()
+                        if not c then return end
+                        c.cooldowns = val and 1 or 0
+                        if Fuyutsui and Fuyutsui.SwitchCooldown then
+                            Fuyutsui:SwitchCooldown()
                         else
                             SyncBlockFromDB()
                         end
@@ -295,14 +305,15 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
                     values = { [0] = "自动", [1] = "单体" },
                     sorting = { 0, 1 },
                     get = function()
-                        FuyutsuiDB = FuyutsuiDB or {}
-                        return FuyutsuiDB.aoeMode or 0
+                        local c = CharCfg()
+                        return (c and c.aoeMode) or 0
                     end,
                     set = function(_, val)
-                        FuyutsuiDB = FuyutsuiDB or {}
-                        FuyutsuiDB.aoeMode = val
-                        if fu.switchAoeMode then
-                            fu.switchAoeMode()
+                        local c = CharCfg()
+                        if not c then return end
+                        c.aoeMode = val
+                        if Fuyutsui and Fuyutsui.SwitchAoeMode then
+                            Fuyutsui:SwitchAoeMode()
                         else
                             SyncBlockFromDB()
                         end
@@ -315,14 +326,15 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
                     values = { [0] = "官方一键辅助", [1] = "手动编写逻辑" },
                     sorting = { 0, 1 },
                     get = function()
-                        FuyutsuiDB = FuyutsuiDB or {}
-                        return FuyutsuiDB.dpsMode or 0
+                        local c = CharCfg()
+                        return (c and c.dpsMode) or 0
                     end,
                     set = function(_, val)
-                        FuyutsuiDB = FuyutsuiDB or {}
-                        FuyutsuiDB.dpsMode = val
-                        if fu.switchDpsMode then
-                            fu.switchDpsMode()
+                        local c = CharCfg()
+                        if not c then return end
+                        c.dpsMode = val
+                        if Fuyutsui and Fuyutsui.SwitchDpsMode then
+                            Fuyutsui:SwitchDpsMode()
                         else
                             SyncBlockFromDB()
                         end
