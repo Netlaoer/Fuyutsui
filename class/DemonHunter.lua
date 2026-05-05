@@ -1,6 +1,5 @@
 local _, fu = ...
 if fu.classId ~= 12 then return end
-local creat = fu.updateOrCreatTextureByIndex
 
 fu.heroSpell = {
     [442290] = 1,  -- 奥达奇收割者

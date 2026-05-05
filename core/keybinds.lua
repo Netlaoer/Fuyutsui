@@ -1,7 +1,7 @@
 local _, fu = ...
 
-local actionBars = fu.actionBars
-local keymap = fu.keymap
+local actionBars = Fuyutsui.actionBars
+local keymap = Fuyutsui.keymap
 local keybindings = {}
 
 local function ProcessActionSlot(slot)

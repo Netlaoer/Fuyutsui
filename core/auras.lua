@@ -1,7 +1,6 @@
 local _, fu = ...
-local classId, e = fu.classId, fu.e
+local classId, e = fu.classId, Fuyutsui.e
 local addAuras, updateAuras, removeAuras = {}, {}, {} -- 添加、更新、移除光环
-local creat = fu.updateOrCreatTextureByIndex
 
 --[[
     auras.lua — 逻辑光环状态机（按职业）
@@ -1076,9 +1075,9 @@ function Fuyutsui:updateAuraBlocks()
             v = info.auraRef[info.showKey]
         end
         if v then
-            creat(info.index, v / 255)
+            self:CreatTexture(info.index, v / 255)
         else
-            creat(info.index, 0)
+            self:CreatTexture(info.index, 0)
         end
     end
 end

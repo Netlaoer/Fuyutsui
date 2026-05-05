@@ -1,6 +1,5 @@
 local _, fu = ...
 if fu.classId ~= 8 then return end
-local creat = fu.updateOrCreatTextureByIndex
 
 fu.HarmfulSpellId = 116 -- 寒冰箭
 

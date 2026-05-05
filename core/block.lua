@@ -39,7 +39,7 @@ local function creatTextureByIndex(i)
 end
 
 -- 更新或创建静态色块 (按索引)
-function Fuyutsui:updateOrCreatTextureByIndex(i, b)
+function Fuyutsui:CreatTexture(i, b)
     local tex = creatTextureByIndex(i)
     if tex then
         tex:SetColorTexture(0, i / 255, b, 1)
@@ -48,12 +48,12 @@ end
 
 function Fuyutsui:clearAllTextures()
     for i = 1, BLOCK_FIX_CONFIG.blockCount do
-        self:updateOrCreatTextureByIndex(i, 0)
+        self:CreatTexture(i, 0)
     end
 end
 
 for i = 1, BLOCK_FIX_CONFIG.blockCount do
-    Fuyutsui:updateOrCreatTextureByIndex(i, 0)
+    Fuyutsui:CreatTexture(i, 0)
 end
 
 local c = 255

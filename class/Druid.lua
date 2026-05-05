@@ -1,8 +1,6 @@
 local _, fu = ...
 if fu.classId ~= 11 then return end
 
-local creat = fu.updateOrCreatTextureByIndex
-
 fu.HelpfulSpellId = 774
 fu.HarmfulSpellId = 5176
 

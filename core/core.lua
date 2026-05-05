@@ -1,29 +1,9 @@
 local _, fu = ...
 local className, classFilename, classId = UnitClass("player")
+fu.classId = classId
 Fuyutsui = LibStub("AceAddon-3.0"):NewAddon("Fuyutsui", "AceEvent-3.0", "AceConsole-3.0")
 local AC = LibStub("AceConfig-3.0") -- AceConfig-3.0 是 Ace3 库中的一个模块，用于注册和管理配置选项
 local ACD = LibStub("AceConfigDialog-3.0")
-
-Fuyutsui = {
-    state = {},
-    blocks = {},
-    target = {},
-    nameplate = {},
-    group = {
-        list = {},
-    },
-    defaults = {
-        profile = {
-            someInput = "",
-        },
-        char = {
-            level = 0,
-            aoeMode = 0,
-            cooldowns = 0,
-            dpsMode = 0,
-        },
-    },
-}
 
 function Fuyutsui:OnInitialize()
     -- 使用“默认”配置文件，而非特定角色的配置文件。
@@ -42,12 +22,14 @@ function Fuyutsui:OnInitialize()
     self:RegisterChatCommand("Fuyutsui", "SlashCommand")
 
     self:GetCharacterInfo()
-    self:loadPlayerBlocks(self.state.specIndex)
-    self.Initialize = true
 end
 
 function Fuyutsui:OnEnable()
     self:GetCharacterSpecInfo()
+    self:updateSpellKnown()
+    self:updatePlayerBlocks()
+    self:readKeybindings()
+    self:hookChatFrameEditBox()
 
     self:RegisterEvent("ZONE_CHANGED")
     self:RegisterEvent("ZONE_CHANGED_INDOORS")
@@ -103,6 +85,7 @@ function Fuyutsui:OnEnable()
     if self.StartFrameUpdates then
         self:StartFrameUpdates()
     end
+    self.Initialize = true
 end
 
 local function CharCfg()
@@ -127,7 +110,7 @@ function Fuyutsui:SwitchCooldown()
         print("|cff00ff00[Fuyutsui]|r 爆发已|cff00ff00开启|r")
     end
     if fu.blocks and fu.blocks["爆发开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["爆发开关"], c.cooldowns / 255)
+        fu.CreatTexture(fu.blocks["爆发开关"], c.cooldowns / 255)
     end
     SaveConfig()
 end
@@ -141,7 +124,7 @@ function Fuyutsui:SwitchAoeMode()
         print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00单体|r模式！")
     end
     if fu.blocks and fu.blocks["AOE开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], c.aoeMode / 255)
+        fu.CreatTexture(fu.blocks["AOE开关"], c.aoeMode / 255)
     end
     SaveConfig()
 end
@@ -155,7 +138,7 @@ function Fuyutsui:SwitchDpsMode()
         print("|cff00ff00[Fuyutsui]|r 输出模式已修改为|cff00ff00手动编写逻辑|r")
     end
     if fu.blocks and fu.blocks["输出模式"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["输出模式"], c.dpsMode / 255)
+        fu.CreatTexture(fu.blocks["输出模式"], c.dpsMode / 255)
     end
     SaveConfig()
 end
@@ -251,6 +234,20 @@ function Fuyutsui:SlashCommand(input, editbox)
     end
 end
 
+function SetTestSecret(set)
+    SetCVar("secretChallengeModeRestrictionsForced", set)
+    SetCVar("secretCombatRestrictionsForced", set)
+    SetCVar("secretEncounterRestrictionsForced", set)
+    SetCVar("secretMapRestrictionsForced", set)
+    SetCVar("secretPvPMatchRestrictionsForced", set)
+    SetCVar("secretAuraDataRestrictionsForced", set)
+    SetCVar("scriptErrors", set);
+    SetCVar("doNotFlashLowHealthWarning", set);
+end
+
+-- /script SetTestSecret(0)
+SetTestSecret(1)
+
 function Fuyutsui:IterateGroupMembers(reversed, forceParty)
     local unit = (not forceParty and IsInRaid()) and 'raid' or 'party'
     local numGroupMembers = unit == 'party' and GetNumSubgroupMembers() or GetNumGroupMembers()
@@ -274,3 +271,52 @@ function Fuyutsui:creatColorCurve(point, b)
     curve:AddPoint(point, CreateColor(0, 0, b / 255, 1))
     return curve
 end
+
+Fuyutsui.state = {
+    classId = classId,
+    className = className,
+    classFilename = classFilename,
+}
+Fuyutsui.blocks = {}
+Fuyutsui.target = {}
+Fuyutsui.nameplate = {}
+Fuyutsui.group = {}
+Fuyutsui.groupList = {}
+Fuyutsui.defaults = {
+    profile = {
+        someInput = "",
+    },
+    char = {
+        level = 0,
+        aoeMode = 0,
+        cooldowns = 0,
+        dpsMode = 0,
+    },
+}
+Fuyutsui.options = {
+    type = "group",
+    name = "Fuyutsui",
+    args = {
+        intro = {
+            type = "description",
+            name = "与 /fu 子命令配合；游戏内开关仍保存在「角色专用」变量 FuyutsuiDB。",
+            fontSize = "medium",
+            order = 0,
+        },
+        someInput = {
+            type = "input",
+            name = "示例文本",
+            desc = "/fu message 会打印此项（profile）",
+            order = 10,
+            width = "full",
+            get = function()
+                return (Fuyutsui.db and Fuyutsui.db.profile and Fuyutsui.db.profile.someInput) or ""
+            end,
+            set = function(_, v)
+                if Fuyutsui.db and Fuyutsui.db.profile then
+                    Fuyutsui.db.profile.someInput = v or ""
+                end
+            end,
+        },
+    }
+}

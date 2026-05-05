@@ -182,17 +182,17 @@ local function BuildBlocksSummary()
 end
 
 --- 与 core.lua 中 slash 逻辑一致：改 SavedVariables 后同步顶部像素
-local function SyncBlockFromDB()
+function Fuyutsui:SyncBlockFromDB()
     local c = CharCfg()
     if not c or not fu.blocks then return end
     if fu.blocks["爆发开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["爆发开关"], (c.cooldowns or 0) / 255)
+        self:CreatTexture(fu.blocks["爆发开关"], (c.cooldowns or 0) / 255)
     end
     if fu.blocks["AOE开关"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], (c.aoeMode or 0) / 255)
+        self:CreatTexture(fu.blocks["AOE开关"], (c.aoeMode or 0) / 255)
     end
     if fu.blocks["输出模式"] then
-        fu.updateOrCreatTextureByIndex(fu.blocks["输出模式"], (c.dpsMode or 0) / 255)
+        self:CreatTexture(fu.blocks["输出模式"], (c.dpsMode or 0) / 255)
     end
 end
 

@@ -584,7 +584,7 @@ Fuyutsui.spellsList = {
     [441776]  = { index = 60, },               -- 致命一击
 }
 
-fu.e = {
+Fuyutsui.e = {
     ["法术冷却"] = "SPELL_UPDATE_COOLDOWN", -- 冷却事件
     ["施法成功"] = "UNIT_SPELLCAST_SUCCEEDED", -- 成功事件
     ["图标改变"] = "SPELL_UPDATE_ICON", -- ICON事件
@@ -657,7 +657,7 @@ Fuyutsui.heroTalents = {
 }
 
 -- 难度文本
-fu.difficutlyToText = {
+Fuyutsui.difficutlyToText = {
     [1] = "5人本普通", -- Normal (Dungeon)
     [2] = "5人本英雄", -- Heroic (Dungeon)
     [14] = "团本普通", -- Normal (Raid)
@@ -723,7 +723,7 @@ Fuyutsui.bossID = {
     [1701] = 79, -- 高阶贤者维里克斯
 }
 -- 能量类型
-fu.EnumPowerType = {
+Fuyutsui.EnumPowerType = {
     ["MANA"] = 0,
     ["RAGE"] = 1,
     ["FOCUS"] = 2,
@@ -815,7 +815,7 @@ Fuyutsui.rangeSpecID = {
     [1446] = 15, -- Initial
 }
 -- 无秘密值光环
-fu.noSecretAuras = {
+Fuyutsui.noSecretAuras = {
     -- 恩护 唤魔师
     [355941] = true,  -- Dream Breath
     [363502] = true,  -- Dream Flight
@@ -861,7 +861,7 @@ fu.noSecretAuras = {
     [1244893] = true, -- Beacon of the Savior, 救世道标
 }
 -- 动作条
-fu.actionBars = {
+Fuyutsui.actionBars = {
     { startSlot = 1,   endSlot = 12,  bindingPrefix = "ACTIONBUTTON" },
     { startSlot = 13,  endSlot = 24,  bindingPrefix = "ACTIONBUTTON" },
     { startSlot = 25,  endSlot = 36,  bindingPrefix = "MULTIACTIONBAR3BUTTON" },
@@ -878,7 +878,7 @@ fu.actionBars = {
     { startSlot = 169, endSlot = 180, bindingPrefix = "MULTIACTIONBAR7BUTTON" }
 }
 -- 按键映射
-fu.keymap = {
+Fuyutsui.keymap = {
     ["1"] = 49,
     ["2"] = 50,
     ["3"] = 51,
@@ -980,51 +980,9 @@ fu.keymap = {
     ["/"] = 191,
 }
 -- 角色类型映射
-fu.roleMap = {
+Fuyutsui.roleMap = {
     ["TANK"] = 1,
     ["HEALER"] = 2,
     ["DAMAGER"] = 3,
     ["NONE"] = 0,
 }
-
-function SetTestSecret(set)
-    SetCVar("secretChallengeModeRestrictionsForced", set)
-    SetCVar("secretCombatRestrictionsForced", set)
-    SetCVar("secretEncounterRestrictionsForced", set)
-    SetCVar("secretMapRestrictionsForced", set)
-    SetCVar("secretPvPMatchRestrictionsForced", set)
-    SetCVar("secretAuraDataRestrictionsForced", set)
-    SetCVar("scriptErrors", set);
-    SetCVar("doNotFlashLowHealthWarning", set);
-end
-
--- /script SetTestSecret(0)
-SetTestSecret(1)
-
--- 遍历队伍成员, 来自WeakAuras的代码
----@param reversed boolean 是否逆序
----@param forceParty boolean 是否强制使用队伍
----@return function 迭代器
-function fu.IterateGroupMembers(reversed, forceParty)
-    local unit = (not forceParty and IsInRaid()) and 'raid' or 'party'
-    local numGroupMembers = unit == 'party' and GetNumSubgroupMembers() or GetNumGroupMembers()
-    local i = reversed and numGroupMembers or (unit == 'party' and 0 or 1)
-    return function()
-        local ret
-        if i == 0 and unit == 'party' then
-            ret = 'player'
-        elseif i <= numGroupMembers and i > 0 then
-            ret = unit .. i
-        end
-        i = i + (reversed and -1 or 1)
-        return ret
-    end
-end
-
-function fu.creatColorCurve(point, b)
-    local curve = C_CurveUtil.CreateColorCurve()
-    curve:SetType(Enum.LuaCurveType.Linear)
-    curve:AddPoint(0, CreateColor(0, 0, 0, 1))
-    curve:AddPoint(point, CreateColor(0, 0, b / 255, 1))
-    return curve
-end

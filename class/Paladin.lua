@@ -1,5 +1,5 @@
 local _, fu = ...
-if Fuyutsui.state.classId ~= 2 then return end
+if fu.classId ~= 2 then return end
 
 Fuyutsui.ClassBlocks = {
     [1] = {

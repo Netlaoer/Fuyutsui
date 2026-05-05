@@ -8,7 +8,6 @@ local GetSpellName = C_Spell.GetSpellName
 local IsSpellKnown = C_SpellBook.IsSpellKnown
 local IsSpellInSpellBook = C_SpellBook.IsSpellInSpellBook
 local EvaluateColorFromBoolean = C_CurveUtil.EvaluateColorFromBoolean
-local creat = Fuyutsui.updateOrCreatTextureByIndex
 local rc = LibStub("LibRangeCheck-3.0")
 
 local state = Fuyutsui.state
@@ -16,9 +15,10 @@ local blocks = Fuyutsui.blocks
 local target = Fuyutsui.target
 local nameplate = Fuyutsui.nameplate
 local group = Fuyutsui.group
+local groupList = Fuyutsui.groupList
 local spells = {}
 local failedSpell, failedSpellId, failedSpellTimer = nil, nil, nil
-local roleMap, enumPowerType, spellsList = fu.roleMap, fu.EnumPowerType, Fuyutsui.spellsList
+local roleMap, enumPowerType, spellsList = Fuyutsui.roleMap, Fuyutsui.EnumPowerType, Fuyutsui.spellsList
 local fallbackColor = CreateColor(0, 0, 1)
 local specRange = 40
 
@@ -47,8 +47,8 @@ local function creatColorCurveScaling(b)
 end
 
 local curve100 = creatColorCurveScaling(100)
-local curve255 = fu.creatColorCurve(255, 255)
-local curve10 = fu.creatColorCurve(10, 100)
+local curve255 = Fuyutsui:creatColorCurve(255, 255)
+local curve10 = Fuyutsui:creatColorCurve(10, 100)
 
 -- 单体读条治疗法术
 -- 施法目标的生命值增加值,防止对同一个目标重复施法,导致过量治疗
@@ -126,13 +126,13 @@ local function updateCooldownSpellKnown()
         if isKnown or isInBook or info.forcedKnown then
             spells[spellID] = info
         else
-            creat(index, 1)
+            Fuyutsui:CreatTexture(index, 1)
         end
     end
 end
 
 -- 更新法术已知状态
-local function updateSpellKnown()
+function Fuyutsui:updateSpellKnown()
     updateCooldownSpellKnown()
 
     -- 动态生成防御驱散能力
@@ -215,6 +215,7 @@ function Fuyutsui:updatePlayerBlocks()
     self:updateTargetHealth()                       -- 目标生命值
     self:updateEnemyCount()                         -- 敌人数量
     self:updateGroup()                              -- 更新队伍
+
     C_Timer.After(1, function()
         self:updatePlayerConfig()
         self.Initialize = true
@@ -223,7 +224,16 @@ end
 
 -- 载入玩家blocks配置
 function Fuyutsui:loadPlayerBlocks(specIndex)
-    if not specIndex or not Fuyutsui.ClassBlocks then return end
+    if not specIndex then
+        -- self:Print("未选择专精")
+        return
+    end
+
+    if not Fuyutsui.ClassBlocks then
+        -- self:Print("未载入专精配置")
+        return
+    end
+    -- self:Print("载入专精配置")
     local t = Fuyutsui.ClassBlocks[specIndex]
     if not t then return end
     blocks = {
@@ -265,15 +275,15 @@ end
 
 -- 1. 首次登录获取角色信息
 function Fuyutsui:GetCharacterInfo()
-    local className, classFilename, classId = UnitClass("player")
     self.db.char.level = UnitLevel("player")
     self.state.name = UnitName("player")
     self.state.GUID = UnitGUID("player")
-    self.state.className = className
-    self.state.classFilename = classFilename
-    self.state.classId = classId
     self.state.specIndex = C_SpecializationInfo.GetSpecialization()
-    self.state.classColor = RAID_CLASS_COLORS[classFilename].colorStr
+    self.state.classColor = RAID_CLASS_COLORS[Fuyutsui.state.classFilename].colorStr
+    self:loadPlayerBlocks(self.state.specIndex)
+    self:updateSpellKnown()
+    self:CreatTexture(blocks.state["职业"], self.state.classId / 255)
+    self:CreatTexture(blocks.state["专精"], self.state.specIndex / 255)
 end
 
 -- 2. 首次登录获取玩家专精信息
@@ -282,12 +292,13 @@ function Fuyutsui:GetCharacterSpecInfo()
     self.state.specID = specID
     self.state.specName = specName
     self.state.specRole = role
-    self.state.specRange = fu.rangeSpecID[specID]
+    self.state.specRange = Fuyutsui.rangeSpecID[specID]
     self.state.isDead = UnitIsDeadOrGhost("player")
     self.state.isChatOpen = false
     self.state.casting = false
     self.state.channeling = false
     self:updatePlayerMounted()
+    self:updateGroup()
 end
 
 -- 2. 更新玩家专精信息
@@ -298,29 +309,30 @@ function Fuyutsui:updatePlayerSpecInfo()
     self.state.specID = specID
     self.state.specName = specName
     self.state.specRole = role
-    self.state.specRange = fu.rangeSpecID[specID]
-    self:loadPlayerBlocks(self.state.specIndex)
+    self.state.specRange = Fuyutsui.rangeSpecID[specID]
+    self:loadPlayerBlocks(self.state.specIndex) -- 载入玩家blocks配置
+    self:updateSpellKnown()                     -- 更新法术已知状态
+    self:updatePlayerBlocks()                   -- 更新玩家blocks信息
 end
 
 -- 4. 更新玩家有效性
 function Fuyutsui:updatePlayerValid()
     local valid = not state.isDead and not state.mounted and not state.isChatOpen
     state.valid = valid and 1 / 255 or 0
-    creat(blocks.state["有效性"], state.valid)
+    self:CreatTexture(blocks.state["有效性"], state.valid)
 end
 
 -- 5. 更新玩家战斗状态
 function Fuyutsui:updatePlayerCombat()
     local combat = UnitAffectingCombat("player")
     state.combat = combat and 1 / 255 or 0
-    creat(blocks.state["战斗"], state.combat)
+    self:CreatTexture(blocks.state["战斗"], state.combat)
 end
 
 -- 6. 更新玩家移动状态
 function Fuyutsui:updatePlayerMoving(boolean)
-    local moving = boolean
-    state.moving = moving and 1 / 255 or 0
-    creat(blocks.state["移动"], state.moving)
+    state.moving = boolean and 1 / 255 or 0
+    self:CreatTexture(blocks.state["移动"], state.moving)
 end
 
 -- 7. 更新玩家施法状态
@@ -332,11 +344,11 @@ function Fuyutsui:updatePlayerCastingInfo()
             ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = castingDurationColor:GetRGB()
             state.castingDuration = b
-            creat(blocks.state["施法"], state.castingDuration)
+            self:CreatTexture(blocks.state["施法"], state.castingDuration)
         end
     else
         state.castingDuration = 0
-        creat(blocks.state["施法"], 0)
+        self:CreatTexture(blocks.state["施法"], 0)
     end
 end
 
@@ -349,11 +361,11 @@ function Fuyutsui:updatePlayerChannelingInfo()
             ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = channelDurationColor:GetRGB()
             state.channelingDuration = b
-            creat(blocks.state["引导"], b)
+            self:CreatTexture(blocks.state["引导"], b)
         end
     else
         state.channelingDuration = 0
-        creat(blocks.state["引导"], 0)
+        self:CreatTexture(blocks.state["引导"], 0)
     end
 end
 
@@ -367,7 +379,7 @@ function Fuyutsui:updatePlayerEmpowerInfo()
             ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = empowerDurationColor:GetRGB()
             state.empowerDuration = b
-            creat(blocks.state["蓄力"], state.empowerDuration)
+            self:CreatTexture(blocks.state["蓄力"], state.empowerDuration)
         end
         if empowerStages then
             for k, v in pairs(empowerStages) do
@@ -375,7 +387,7 @@ function Fuyutsui:updatePlayerEmpowerInfo()
                 ---@diagnostic disable-next-line: param-type-mismatch
                 local _, _, b = empower:GetRGB()
                 state.empowerStage = (k - 1) / 255
-                creat(blocks.state["蓄力层数"], state.empowerStage)
+                self:CreatTexture(blocks.state["蓄力层数"], state.empowerStage)
                 if b > 0 then
                     break
                 end
@@ -384,41 +396,41 @@ function Fuyutsui:updatePlayerEmpowerInfo()
     else
         state.empowerDuration = 0
         state.empowerStage = 0
-        creat(blocks.state["蓄力"], 0)
-        creat(blocks.state["蓄力层数"], 0)
+        self:CreatTexture(blocks.state["蓄力"], 0)
+        self:CreatTexture(blocks.state["蓄力层数"], 0)
     end
 end
 
 -- 11. 更新玩家血量信息
-local function updatePlayerHealth()
+function Fuyutsui:updatePlayerHealth()
     local healthPercent = UnitHealthPercent("player", false, curve100)
     local _, _, b = healthPercent:GetRGB()
     state.healthPercent = b
-    creat(blocks.state["生命值"], state.healthPercent)
+    Fuyutsui:CreatTexture(blocks.state["生命值"], state.healthPercent)
 end
 
 -- 12. 更新玩家能量信息
-local function updatePlayerPower(powerType)
+function Fuyutsui:updatePlayerPower(powerType)
     if (state.powerType and powerType == state.powerType) or state.powerType == nil or powerType == nil then
         local powerPercent = UnitPowerPercent("player", enumPowerType[state.powerType], nil, curve100)
         local _, _, b = powerPercent:GetRGB()
         state.powerPercent = b
-        creat(blocks.state["能量值"], state.powerPercent)
+        Fuyutsui:CreatTexture(blocks.state["能量值"], state.powerPercent)
     end
     if powerType == "COMBO_POINTS" and blocks and blocks.state["连击点"] then
         local power = UnitPower("player", 4)
         state.comboPoints = power / 255 or 0
-        creat(blocks.state["连击点"], state.comboPoints)
+        Fuyutsui:CreatTexture(blocks.state["连击点"], state.comboPoints)
     end
     if powerType == "HOLY_POWER" and blocks and blocks.state["神圣能量"] then
         local power = UnitPower("player", 9)
         state.holyPower = power / 255 or 0
-        creat(blocks.state["神圣能量"], state.holyPower)
+        Fuyutsui:CreatTexture(blocks.state["神圣能量"], state.holyPower)
     end
     if powerType == "SOUL_SHARDS" and blocks and blocks.state["灵魂碎片"] then
         local power = UnitPower("player", 7)
         state.soulShards = power / 255 or 0
-        creat(blocks.state["灵魂碎片"], state.soulShards)
+        Fuyutsui:CreatTexture(blocks.state["灵魂碎片"], state.soulShards)
     end
 end
 
@@ -427,7 +439,7 @@ function Fuyutsui:updatePlayerAssistant()
     local spellId = C_AssistedCombat.GetNextCastSpell()
     local spellIndex = spellsList[spellId] and spellsList[spellId].index or 0
     state.assistantSpell = spellIndex / 255 or 0
-    creat(blocks.state["一键辅助"], state.assistantSpell)
+    self:CreatTexture(blocks.state["一键辅助"], state.assistantSpell)
 end
 
 -- 14. 更新玩家法术失败
@@ -452,12 +464,12 @@ function Fuyutsui:updateSpellFailed(spellID)
     end
 
     failedSpellTimer = C_Timer.NewTimer(1.5, function()
-        creat(blocks.state["法术失败"], 0)
+        self:CreatTexture(blocks.state["法术失败"], 0)
         failedSpellTimer = nil
         failedSpell = nil
         failedSpellId = nil
     end)
-    creat(blocks.state["法术失败"], state.failedSpell)
+    self:CreatTexture(blocks.state["法术失败"], state.failedSpell)
 end
 
 -- 14. 通过施法成功更新玩家法术失败
@@ -466,7 +478,7 @@ function Fuyutsui:updateFailedSpellBySuccess(spellID)
     failedSpell = nil
     failedSpellId = nil
     print("|cff00ff00插入技能: |r", GetSpellName(spellID))
-    creat(blocks.state["法术失败"], 0)
+    self:CreatTexture(blocks.state["法术失败"], 0)
 end
 
 -- 15. 更新目标类型
@@ -503,7 +515,7 @@ function Fuyutsui:updateTargetValid()
         targetType = getTargetDispelType()
     end
     target.type = targetType / 255 or 0
-    creat(blocks.state["目标类型"], target.type)
+    Fuyutsui:CreatTexture(blocks.state["目标类型"], target.type)
 end
 
 -- 16. 更新玩家队伍类型
@@ -515,14 +527,14 @@ function Fuyutsui:updateGroupType()
         index = 46
     end
     state.groupType = index / 255 or 0
-    creat(blocks.state["队伍类型"], state.groupType)
+    Fuyutsui:CreatTexture(blocks.state["队伍类型"], state.groupType)
 end
 
 -- 17. 更新玩家队伍人数
 function Fuyutsui:updateGroupCount()
     local count = GetNumGroupMembers()
     state.groupCount = count / 255 or 0
-    creat(blocks.state["队伍人数"], state.groupCount)
+    Fuyutsui:CreatTexture(blocks.state["队伍人数"], state.groupCount)
 end
 
 -- 18. 19. 更新boss战ID和难度
@@ -539,13 +551,13 @@ function Fuyutsui:updateEncounterID(encounterID, difficultyID)
     local id = Fuyutsui.bossID and Fuyutsui.bossID[encounterID] or 0
     if id then
         state.bossID = id / 255 or 0
-        creat(blocks.state["首领战"], state.bossID)
+        self:CreatTexture(blocks.state["首领战"], state.bossID)
     else
         state.bossID = 0
-        creat(blocks.state["首领战"], state.bossID)
+        self:CreatTexture(blocks.state["首领战"], state.bossID)
     end
     state.difficultyID = difficultyID / 255 or 0
-    creat(blocks.state["难度"], state.difficultyID)
+    self:CreatTexture(blocks.state["难度"], state.difficultyID)
 end
 
 -- 20. 更新玩家英雄天赋
@@ -557,7 +569,7 @@ function Fuyutsui:updateHeroTalent()
                 Fuyutsui.state.heroTalent = info
             end
         end
-        creat(blocks.state["英雄天赋"], Fuyutsui.state.heroTalent / 255)
+        self:CreatTexture(blocks.state["英雄天赋"], Fuyutsui.state.heroTalent / 255)
     end
 end
 
@@ -580,18 +592,18 @@ function Fuyutsui:updatePlayerCasting(spellId)
     if not blocks then return end
     if blocks.state["施法目标"] then
         if state.castTargetIndex then
-            creat(blocks.state["施法目标"], state.castTargetIndex)
+            Fuyutsui:CreatTexture(blocks.state["施法目标"], state.castTargetIndex)
         else
-            creat(blocks.state["施法目标"], 0)
+            Fuyutsui:CreatTexture(blocks.state["施法目标"], 0)
         end
     end
     if blocks.state["施法技能"] then
-        local castingSpell = spellsList[spellId] and spellsList[spellId].index
+        local castingSpell = spellsList[spellId] and spellsList[spellId].index or 0
         state.castingSpell = castingSpell / 255 or 0
         if castingSpell then
-            creat(blocks.state["施法技能"], state.castingSpell)
+            Fuyutsui:CreatTexture(blocks.state["施法技能"], state.castingSpell)
         else
-            creat(blocks.state["施法技能"], 0)
+            Fuyutsui:CreatTexture(blocks.state["施法技能"], 0)
         end
     end
 end
@@ -601,13 +613,13 @@ function Fuyutsui:updatePlayerConfig()
     local c = fu.db and fu.db.char
     if not c or not blocks then return end
     if blocks.state["爆发开关"] then
-        creat(blocks.state["爆发开关"], c.cooldowns)
+        Fuyutsui:CreatTexture(blocks.state["爆发开关"], c.cooldowns)
     end
     if blocks.state["AOE开关"] then
-        creat(blocks.state["AOE开关"], c.aoeMode)
+        Fuyutsui:CreatTexture(blocks.state["AOE开关"], c.aoeMode)
     end
     if blocks.state["输出模式"] then
-        creat(blocks.state["输出模式"], c.dpsMode)
+        Fuyutsui:CreatTexture(blocks.state["输出模式"], c.dpsMode)
     end
 end
 
@@ -619,7 +631,7 @@ function Fuyutsui:updatePlayerStagger()
         local maxHealth = UnitHealthMax(unit)
         local staggerPercent = damage / maxHealth * 100
         state.staggerPercent = staggerPercent / 255 or 0
-        creat(blocks.state["酒池"], state.staggerPercent)
+        Fuyutsui:CreatTexture(blocks.state["酒池"], state.staggerPercent)
     end
 end
 
@@ -634,16 +646,16 @@ function Fuyutsui:updateRune()
             end
         end
         state.runeCount = total / 255 or 0
-        creat(blocks.state["符文"], state.runeCount)
+        Fuyutsui:CreatTexture(blocks.state["符文"], state.runeCount)
     end
 end
 
 -- 获取玩家形态
 function Fuyutsui:updateShapeshiftForm()
-    local shapeshiftFormID = GetShapeshiftFormID()
-    state.shapeshiftFormID = shapeshiftFormID / 255 or 0
+    local shapeshiftFormID = GetShapeshiftFormID() or 0
+    state.shapeshiftFormID = shapeshiftFormID / 255
     if blocks and blocks.state["姿态"] then
-        creat(blocks.state["姿态"], state.shapeshiftFormID)
+        Fuyutsui:CreatTexture(blocks.state["姿态"], state.shapeshiftFormID)
     end
 end
 
@@ -651,14 +663,14 @@ local diseaseJudgeTimer = nil
 function Fuyutsui:updateDiseaseJudge()
     if blocks and blocks.state["疾病判断"] then
         state.diseaseJudge = 1 / 255 or 0
-        creat(blocks.state["疾病判断"], state.diseaseJudge)
+        Fuyutsui:CreatTexture(blocks.state["疾病判断"], state.diseaseJudge)
         if diseaseJudgeTimer then
             diseaseJudgeTimer:Cancel()
             diseaseJudgeTimer = nil
         end
         diseaseJudgeTimer = C_Timer.NewTimer(1, function()
             state.diseaseJudge = 0
-            creat(blocks.state["疾病判断"], state.diseaseJudge)
+            Fuyutsui:CreatTexture(blocks.state["疾病判断"], state.diseaseJudge)
             diseaseJudgeTimer = nil
         end)
     end
@@ -677,9 +689,9 @@ function Fuyutsui:updateSpellCooldown()
             local value = EvaluateColorFromBoolean(cdInfo.isEnabled, result, fallbackColor)
             local _, _, b = value:GetRGB()
             if cdInfo.isOnGCD then b = 0 end
-            creat(index, b)
+            self:CreatTexture(index, b)
         else
-            creat(index, 1)
+            self:CreatTexture(index, 1)
         end
         local chargeIndex = info.charge
         if chargeIndex then
@@ -688,9 +700,9 @@ function Fuyutsui:updateSpellCooldown()
                 local result = chDurationObj:EvaluateRemainingDuration(curve255)
                 ---@diagnostic disable-next-line: param-type-mismatch
                 local _, _, b = result:GetRGB()
-                creat(chargeIndex, b)
+                self:CreatTexture(chargeIndex, b)
             else
-                creat(chargeIndex, 1)
+                self:CreatTexture(chargeIndex, 1)
             end
         end
     end
@@ -723,14 +735,14 @@ end
 
 function Fuyutsui:updateTargetRangeBlock()
     local minRange, maxRange = updateUnitRange("target")
-    target.minRange = minRange / 255 or 1
-    target.maxRange = maxRange / 255 or 1
+    target.minRange = minRange and minRange / 255 or 1
+    target.maxRange = maxRange and maxRange / 255 or 1
     if target.maxRange and specRange then
         target.inRange = target.maxRange <= specRange
         self:updateTargetValid()
     end
     if blocks and blocks.state["目标距离"] and target.maxRange then
-        creat(blocks.state["目标距离"], target.maxRange)
+        Fuyutsui:CreatTexture(blocks.state["目标距离"], target.maxRange)
     end
 end
 
@@ -747,7 +759,7 @@ function Fuyutsui:updateTargetHealth()
     local _, _, b = healthPercent:GetRGB()
     target.healthPercent = b or 0
     if blocks and blocks.state["目标生命值"] then
-        creat(blocks.state["目标生命值"], b)
+        Fuyutsui:CreatTexture(blocks.state["目标生命值"], b)
     end
 end
 
@@ -790,7 +802,7 @@ function Fuyutsui:updateEnemyCount()
     end
     state.enemyCount = count / 255 or 0
     if blocks and blocks.state["敌人人数"] then
-        creat(blocks.state["敌人人数"], state.enemyCount)
+        Fuyutsui:CreatTexture(blocks.state["敌人人数"], state.enemyCount)
     end
 end
 
@@ -806,7 +818,7 @@ function Fuyutsui:updateUnitHealthInfo(unit)
     local healthPercent = UnitHealthPercent(unit, false, obj.curve)
     local _, _, b = healthPercent:GetRGB()
     obj.healthPercent = b
-    creat(index, obj.healthPercent)
+    Fuyutsui:CreatTexture(index, obj.healthPercent)
 end
 
 function Fuyutsui:updateUnitValid(unit)
@@ -818,9 +830,9 @@ end
 local falseValue, updateIndex = CreateColor(0, 0, 0, 1), 1
 function Fuyutsui:updateGroupInRange()
     if not blocks or not blocks.groups then return end
-    local numUnits = #group.list
+    local numUnits = #groupList
     if numUnits >= 1 then
-        local unit = group.list[updateIndex]
+        local unit = groupList[updateIndex]
         local obj = group[unit]
         if not obj then return end
         local index = blocks.groups.start + (obj.index - 1) * blocks.groups.num + blocks.groups.role
@@ -833,9 +845,9 @@ function Fuyutsui:updateGroupInRange()
             local trueValue = CreateColor(0, 0, roleValue, 1)
             local booleanValue = EvaluateColorFromBoolean(inRange, trueValue, falseValue)
             local _, _, b = booleanValue:GetRGB()
-            creat(index, b)
+            Fuyutsui:CreatTexture(index, b)
         else
-            creat(index, 0)
+            Fuyutsui:CreatTexture(index, 0)
         end
         updateIndex = updateIndex + 1
         if updateIndex > numUnits then
@@ -964,21 +976,21 @@ function Fuyutsui:OnUpdateUnitAura()
             if maxAura and maxAura.auraInstanceID then
                 local duration = C_UnitAuras.GetAuraDuration(unit, maxAura.auraInstanceID)
                 if maxAura.expirationTime == 0 then
-                    creat(index, 1)
+                    Fuyutsui:CreatTexture(index, 1)
                 elseif duration then
                     local auraduration = duration:EvaluateRemainingDuration(curve255)
                     ---@diagnostic disable-next-line: param-type-mismatch
                     local _, _, b = auraduration:GetRGB()
-                    creat(index, b)
+                    Fuyutsui:CreatTexture(index, b)
                 end
             else
-                creat(index, 0)
+                Fuyutsui:CreatTexture(index, 0)
             end
         end
         if blocks.groups.rejuv then
             local index = blocks.groups.start + (data.index - 1) * blocks.groups.num + blocks.groups.rejuv
             local rejuvCount = getRejuvCount(unit)
-            creat(index, rejuvCount / 255)
+            Fuyutsui:CreatTexture(index, rejuvCount / 255)
         end
     end
 end
@@ -991,10 +1003,10 @@ local function getAuraDispelTypeColor(unit)
     if auraInstanceIDs and #auraInstanceIDs > 0 then
         local color = C_UnitAuras.GetAuraDispelTypeColor(unit, auraInstanceIDs[1], dispelCurve)
         if color then
-            creat(index, color.b)
+            Fuyutsui:CreatTexture(index, color.b)
         end
     else
-        creat(index, 0)
+        Fuyutsui:CreatTexture(index, 0)
     end
 end
 
@@ -1002,17 +1014,17 @@ function Fuyutsui:clearGroupBlocks()
     if blocks.groups and blocks.groups.start then
         local startIndex = blocks.groups.start
         for index = startIndex, 255 do
-            self:updateOrCreatTextureByIndex(index, 0)
+            self:CreatTexture(index, 0)
         end
     end
 end
 
 function Fuyutsui:updateGroup()
     self.group = {}
-    self.group.list = {}
+    self.groupList = {}
     local i = 1
     for unit in self:IterateGroupMembers() do
-        table.insert(group.list, unit)
+        table.insert(groupList, unit)
         local role = UnitGroupRolesAssigned(unit)
         if unit == "player" then
             role = self.state.specRole
@@ -1063,27 +1075,8 @@ function Fuyutsui:ZONE_CHANGED_INDOORS()
     end
 end
 
-function Fuyutsui:PLAYER_LOGIN()
-    updatePlayerState()
-    updatePlayerCombat()
-    updatePlayerHealth()
-    updatePlayerPower()
-    updateShapeshiftForm()
-    updateGroupCount()
-    updateGroupType()
-    self:readKeybindings()
-end
-
 function Fuyutsui:PLAYER_ENTERING_WORLD()
     state.mapID = C_Map.GetBestMapForUnit("player") or 0
-    fu.ClearAllFuyutsuiBars()
-    updatePlayerState()
-    updateSpellKnown()
-    updatePlayerConfig()
-    C_Timer.After(1, function()
-        self:updatePlayerSpecInfo()
-        self:updateGroup()
-    end)
 end
 
 function Fuyutsui:PLAYER_TALENT_UPDATE()
@@ -1107,27 +1100,27 @@ function Fuyutsui:PLAYER_UNGHOST()
 end
 
 function Fuyutsui:PLAYER_MOUNT_DISPLAY_CHANGED()
-    updatePlayerMounted()
+    self:updatePlayerMounted()
 end
 
 -- 战斗状态更新
 function Fuyutsui:PLAYER_REGEN_DISABLED()
-    updateTargetType()
-    updatePlayerCombat()
+    self:updateTargetType()
+    self:updatePlayerCombat()
 end
 
 function Fuyutsui:PLAYER_REGEN_ENABLED()
-    updateTargetType()
-    updatePlayerCombat()
+    self:updateTargetType()
+    self:updatePlayerCombat()
 end
 
 -- 移动状态更新
 function Fuyutsui:PLAYER_STARTED_MOVING()
-    updatePlayerMoving(true)
+    self:updatePlayerMoving(true)
 end
 
 function Fuyutsui:PLAYER_STOPPED_MOVING()
-    updatePlayerMoving(false)
+    self:updatePlayerMoving(false)
 end
 
 function Fuyutsui:UNIT_SPELLCAST_SENT(_, unitTarget, targetName, castGUID, spellID)
@@ -1150,7 +1143,7 @@ function Fuyutsui:UNIT_SPELLCAST_START(_, unitTarget, castGUID, spellID, castBar
     if unitTarget ~= "player" then return end
     state.casting = true
     updateUnitIncomingHealsCurve(spellID)
-    updatePlayerCasting(spellID)
+    self:updatePlayerCasting(spellID)
 end
 
 function Fuyutsui:UNIT_SPELLCAST_STOP(_, unitTarget, castGUID, spellID, castBarID)
@@ -1161,7 +1154,7 @@ function Fuyutsui:UNIT_SPELLCAST_STOP(_, unitTarget, castGUID, spellID, castBarI
     state.castTargetUnit = nil
     state.castTargetName = nil
     state.castTargetIndex = 0
-    updatePlayerCasting(0)
+    self:updatePlayerCasting(0)
 end
 
 -- 引导状态
@@ -1169,7 +1162,7 @@ function Fuyutsui:UNIT_SPELLCAST_CHANNEL_START(_, unitTarget, castGUID, spellID,
     if unitTarget ~= "player" then return end
     state.channeling = true
     state.channelingSpellID = spellID
-    updatePlayerCasting(spellID)
+    self:updatePlayerCasting(spellID)
 end
 
 function Fuyutsui:UNIT_SPELLCAST_CHANNEL_STOP(_, unitTarget, castGUID, spellID, castBarID)
@@ -1178,7 +1171,7 @@ function Fuyutsui:UNIT_SPELLCAST_CHANNEL_STOP(_, unitTarget, castGUID, spellID, 
     state.castTargetUnit = nil
     state.castTargetName = nil
     state.castTargetIndex = 0
-    updatePlayerCasting(0)
+    self:updatePlayerCasting(0)
     -- updateTeaCount2(spellID)
 end
 
@@ -1187,7 +1180,7 @@ function Fuyutsui:UNIT_SPELLCAST_EMPOWER_START(_, unitTarget, castGUID, spellID,
     if unitTarget ~= "player" then return end
     state.empowering = true
     state.empoweringSpellID = spellID
-    updatePlayerCasting(spellID)
+    self:updatePlayerCasting(spellID)
 end
 
 function Fuyutsui:UNIT_SPELLCAST_EMPOWER_STOP(_, unitTarget, castGUID, spellID, complete, interruptedBy, castBarID)
@@ -1196,25 +1189,25 @@ function Fuyutsui:UNIT_SPELLCAST_EMPOWER_STOP(_, unitTarget, castGUID, spellID, 
     state.castTargetUnit = nil
     state.castTargetName = nil
     state.castTargetIndex = 0
-    updatePlayerCasting(0)
+    self:updatePlayerCasting(0)
 end
 
 function Fuyutsui:UNIT_SPELLCAST_SUCCEEDED(_, unitTarget, castGUID, spellID, castBarID)
     if unitTarget ~= "player" then return end
     if not isSec(spellID) then
-        updateFailedSpellBySuccess(spellID)
+        self:updateFailedSpellBySuccess(spellID)
         self:updateAuraBySuccess(spellID, castBarID)
         if spellID == 384255 then
             fu.ClearAllFuyutsuiBars()
             print("切换天赋")
             C_Timer.After(1, function()
-                self:PLAYER_LOGIN()
+                self:updatePlayerSpecInfo()
             end)
         elseif spellID == 200749 then
             fu.ClearAllFuyutsuiBars()
             print("切换专精")
             C_Timer.After(1, function()
-                self:PLAYER_LOGIN()
+                self:updatePlayerSpecInfo()
             end)
         end
     end
@@ -1223,7 +1216,7 @@ end
 function Fuyutsui:UNIT_SPELLCAST_FAILED(_, unitTarget, castGUID, spellID, castBarID)
     if unitTarget ~= "player" then return end
     if not isSec(spellID) then
-        updateSpellFailed(spellID)
+        self:updateSpellFailed(spellID)
     end
 end
 
@@ -1259,45 +1252,45 @@ end
 
 function Fuyutsui:UNIT_HEALTH(_, unit)
     if unit == "player" then
-        updatePlayerHealth()
-        updatePlayerStagger()
+        self:updatePlayerHealth()
+        self:updatePlayerStagger()
     end
     if unit == "target" then
-        updateTargetHealth()
+        self:updateTargetHealth()
     end
     if group[unit] then
-        updateUnitHealthInfo(unit)
+        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
 
 function Fuyutsui:UNIT_MAXHEALTH(_, unit)
     if unit == "player" then
-        updatePlayerHealth()
+        self:updatePlayerHealth()
     end
     if group[unit] then
-        updateUnitHealthInfo(unit)
+        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
 
 function Fuyutsui:UNIT_HEAL_ABSORB_AMOUNT_CHANGED(_, unit)
     if unit == "player" then
-        updatePlayerHealth()
+        self:updatePlayerHealth()
     end
     if group[unit] then
         updateUnitHealAbsorbCurve(unit)
-        updateUnitHealthInfo(unit)
+        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
 
 function Fuyutsui:UNIT_HEAL_PREDICTION(_, unit)
     if unit == "player" then
-        updatePlayerHealth()
+        self:updatePlayerHealth()
     end
     if group[unit] then
-        updateUnitHealthInfo(unit)
+        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
@@ -1305,21 +1298,23 @@ end
 -- 能量更新
 function Fuyutsui:UNIT_POWER_UPDATE(_, unit, powerType)
     if unit ~= "player" then return end
-    updatePlayerPower(powerType)
+    self:updatePlayerPower(powerType)
 end
 
 -- Hook 所有默认聊天框
-for i = 1, NUM_CHAT_WINDOWS do
-    local editBox = _G["ChatFrame" .. i .. "EditBox"]
-    if editBox then
-        editBox:HookScript("OnEditFocusGained", function()
-            state.isChatOpen = true
-            updatePlayerValid()
-        end)
-        editBox:HookScript("OnEditFocusLost", function()
-            state.isChatOpen = false
-            updatePlayerValid()
-        end)
+function Fuyutsui:hookChatFrameEditBox()
+    for i = 1, NUM_CHAT_WINDOWS do
+        local editBox = _G["ChatFrame" .. i .. "EditBox"]
+        if editBox then
+            editBox:HookScript("OnEditFocusGained", function()
+                state.isChatOpen = true
+                Fuyutsui:updatePlayerValid()
+            end)
+            editBox:HookScript("OnEditFocusLost", function()
+                state.isChatOpen = false
+                Fuyutsui:updatePlayerValid()
+            end)
+        end
     end
 end
 
@@ -1339,10 +1334,9 @@ function Fuyutsui:GROUP_ROSTER_UPDATE()
         rosterTimer:Cancel()
     end
     rosterTimer = C_Timer.NewTimer(1, function()
-        clearGroupBlocks()
-        updateGroup()
-        updateGroupCount()
-        updateGroupType()
+        self:updateGroup()
+        self:updateGroupCount()
+        self:updateGroupType()
         rosterTimer = nil
     end)
 end
@@ -1366,7 +1360,7 @@ function Fuyutsui:UI_ERROR_MESSAGE(_, errorType, message)
     if message == "目标不在视野中" then
         updateUnitInSight(state.castTargetUnit)
     elseif message == "射程范围内无有效目标。" then
-        updateDiseaseJudge()
+        self:updateDiseaseJudge()
     end
 end
 
@@ -1387,35 +1381,35 @@ function Fuyutsui:ACTIONBAR_HIDEGRID()
 end
 
 function Fuyutsui:PLAYER_TARGET_CHANGED()
-    updateTargetFullInfo()
+    self:updateTargetFullInfo()
 end
 
 function Fuyutsui:NAME_PLATE_UNIT_ADDED(_, unit)
     addNameplate(unit)
-    updateTargetType()
+    self:updateTargetType()
 end
 
 function Fuyutsui:NAME_PLATE_UNIT_REMOVED(_, unit)
     nameplate[unit] = nil
-    updateTargetType()
+    self:updateTargetType()
 end
 
 function Fuyutsui:UPDATE_SHAPESHIFT_FORM()
-    updateShapeshiftForm()
-    updatePlayerMounted()
+    self:updateShapeshiftForm()
+    self:updatePlayerMounted()
 end
 
 function Fuyutsui:UPDATE_SHAPESHIFT_FORMS()
-    updateShapeshiftForm()
-    updatePlayerMounted()
+    self:updateShapeshiftForm()
+    self:updatePlayerMounted()
 end
 
 function Fuyutsui:ENCOUNTER_START(_, encounterID, encounterName, difficultyID, groupSize)
-    updateEncounterID(encounterID, difficultyID)
+    self:updateEncounterID(encounterID, difficultyID)
 end
 
 function Fuyutsui:ENCOUNTER_END(_, encounterID, encounterName, difficultyID, groupSize, success)
-    updateEncounterID(0, 0)
+    self:updateEncounterID(0, 0)
 end
 
 function Fuyutsui:UNIT_AURA(_, unit, info)
@@ -1423,7 +1417,7 @@ function Fuyutsui:UNIT_AURA(_, unit, info)
     if not obj then return end
     getAuraDispelTypeColor(unit)
     if info.isFullUpdate then
-        updateUnitFullAura(unit)
+        self:updateUnitFullAura(unit)
         return
     end
     if info.addedAuras then
