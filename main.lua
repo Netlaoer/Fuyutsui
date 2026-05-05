@@ -3,7 +3,6 @@ local isSec = issecretvalue
 local GetSpellCooldownDuration = C_Spell.GetSpellCooldownDuration
 local GetSpellChargeDuration = C_Spell.GetSpellChargeDuration
 local GetSpellCooldown = C_Spell.GetSpellCooldown
-local GetOverrideSpell = C_Spell.GetOverrideSpell
 local GetSpellName = C_Spell.GetSpellName
 local IsSpellKnown = C_SpellBook.IsSpellKnown
 local IsSpellInSpellBook = C_SpellBook.IsSpellInSpellBook
@@ -224,16 +223,9 @@ end
 
 -- 载入玩家blocks配置
 function Fuyutsui:loadPlayerBlocks(specIndex)
-    if not specIndex then
-        -- self:Print("未选择专精")
+    if not specIndex or not Fuyutsui.ClassBlocks then
         return
     end
-
-    if not Fuyutsui.ClassBlocks then
-        -- self:Print("未载入专精配置")
-        return
-    end
-    -- self:Print("载入专精配置")
     local t = Fuyutsui.ClassBlocks[specIndex]
     if not t then return end
     blocks = {
@@ -243,18 +235,28 @@ function Fuyutsui:loadPlayerBlocks(specIndex)
         countBars = {},
     }
     for k, v in pairs(t) do
-        if v.type == "block" then
-            blocks.state[v.name] = k
-        elseif v.type == "aura" then
-            blocks.auras[v.name] = k
-        elseif v.type == "spell" then
-            if not blocks.spells[v.spellId] then
-                blocks.spells[v.spellId] = {}
+        if type(v) ~= "table" or not v.type then
+            -- 跳过 powerType 等非条目字段
+        elseif v.type == "block" then
+            if not v.name then
+                self:Print(("loadPlayerBlocks: 索引 %s 的 block 缺少 name，已跳过"):format(tostring(k)))
+            else
+                blocks.state[v.name] = k
             end
-            blocks.spells[v.spellId].index = k
-            blocks.spells[v.spellId].name = v.name
-            if v.charge then
-                blocks.spells[v.spellId].charge = k
+        elseif v.type == "aura" then
+            blocks.auras[k] = v
+        elseif v.type == "spell" then
+            if not v.spellId then
+                self:Print(("loadPlayerBlocks: 索引 %s 的 spell 缺少 spellId，已跳过"):format(tostring(k)))
+            else
+                if not blocks.spells[v.spellId] then
+                    blocks.spells[v.spellId] = {}
+                end
+                blocks.spells[v.spellId].index = k
+                blocks.spells[v.spellId].name = v.name
+                if v.charge then
+                    blocks.spells[v.spellId].charge = k
+                end
             end
         elseif v.type == "countBar" then
             blocks.countBars[k] = v
@@ -271,6 +273,7 @@ function Fuyutsui:loadPlayerBlocks(specIndex)
             end
         end
     end
+    Fuyutsui.blocks = blocks
 end
 
 -- 1. 首次登录获取角色信息
@@ -313,6 +316,8 @@ function Fuyutsui:updatePlayerSpecInfo()
     self:loadPlayerBlocks(self.state.specIndex) -- 载入玩家blocks配置
     self:updateSpellKnown()                     -- 更新法术已知状态
     self:updatePlayerBlocks()                   -- 更新玩家blocks信息
+    self:CreatTexture(blocks.state["职业"], self.state.classId / 255)
+    self:CreatTexture(blocks.state["专精"], self.state.specIndex / 255)
 end
 
 -- 4. 更新玩家有效性
@@ -406,7 +411,7 @@ function Fuyutsui:updatePlayerHealth()
     local healthPercent = UnitHealthPercent("player", false, curve100)
     local _, _, b = healthPercent:GetRGB()
     state.healthPercent = b
-    Fuyutsui:CreatTexture(blocks.state["生命值"], state.healthPercent)
+    self:CreatTexture(blocks.state["生命值"], state.healthPercent)
 end
 
 -- 12. 更新玩家能量信息

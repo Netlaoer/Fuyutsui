@@ -1068,16 +1068,24 @@ function Fuyutsui:updateAura()
 end
 
 function Fuyutsui:updateAuraBlocks()
-    if not fu.blocks or not fu.blocks.auras then return end
-    for name, info in pairs(fu.blocks.auras) do
-        local v = info.show
-        if info.auraRef and info.showKey then
-            v = info.auraRef[info.showKey]
-        end
-        if v then
-            self:CreatTexture(info.index, v / 255)
+    if not self.blocks or not self.blocks.auras then
+        return
+    end
+    for k, info in pairs(self.blocks.auras) do
+        if info.auraName and info.showKey then
+            local aura = Fuyutsui.Auras and Fuyutsui.Auras[info.auraName]
+            if not aura then
+                self:CreatTexture(k, 0)
+            else
+                local v = aura[info.showKey]
+                if v then
+                    self:CreatTexture(k, v / 255)
+                else
+                    self:CreatTexture(k, 0)
+                end
+            end
         else
-            self:CreatTexture(info.index, 0)
+            self:CreatTexture(k, 0)
         end
     end
 end
