@@ -2,7 +2,6 @@ local _, fu = ...
 if fu.classId ~= 10 then return end
 
 local eventTable = { "SPELL_UPDATE_USES", "PLAYER_ENTERING_WORLD" }
-local getCount = C_Spell.GetSpellCastCount
 
 fu.HarmfulSpellId, fu.HelpfulSpellId = 100780, 116670
 

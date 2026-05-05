@@ -39,22 +39,21 @@ local function creatTextureByIndex(i)
 end
 
 -- 更新或创建静态色块 (按索引)
-function fu.updateOrCreatTextureByIndex(i, b)
+function Fuyutsui:updateOrCreatTextureByIndex(i, b)
     local tex = creatTextureByIndex(i)
     if tex then
         tex:SetColorTexture(0, i / 255, b, 1)
     end
 end
 
-function fu.clearAllTextures()
-    for i = 20, BLOCK_FIX_CONFIG.blockCount do
-        fu.updateOrCreatTextureByIndex(i, 0)
-        -- print("清除色块:", i)
+function Fuyutsui:clearAllTextures()
+    for i = 1, BLOCK_FIX_CONFIG.blockCount do
+        self:updateOrCreatTextureByIndex(i, 0)
     end
 end
 
 for i = 1, BLOCK_FIX_CONFIG.blockCount do
-    fu.updateOrCreatTextureByIndex(i, 0)
+    Fuyutsui:updateOrCreatTextureByIndex(i, 0)
 end
 
 local c = 255
@@ -80,7 +79,7 @@ local nextAvailableIndex = 2
 ---@param maxValue number 最大值
 ---@param spellId number 法术ID
 ---@param events table 事件表
-function fu.CreateAutoLayoutBar(minValue, maxValue, spellId, events)
+function Fuyutsui:CreateAutoLayoutBar(minValue, maxValue, spellId, events)
     -- --- 新增：重复性检查 ---
     if spellIdToBar[spellId] then
         -- 如果已经存在该 spellId 的条，直接返回，不执行任何操作

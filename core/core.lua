@@ -1,24 +1,29 @@
 local _, fu = ...
+local className, classFilename, classId = UnitClass("player")
 Fuyutsui = LibStub("AceAddon-3.0"):NewAddon("Fuyutsui", "AceEvent-3.0", "AceConsole-3.0")
 local AC = LibStub("AceConfig-3.0") -- AceConfig-3.0 是 Ace3 库中的一个模块，用于注册和管理配置选项
 local ACD = LibStub("AceConfigDialog-3.0")
 
+Fuyutsui = {
+    state = {
+        className = className,
+        classFilename = classFilename,
+        classId = classId,
+    },
+    blocks = {},
+    target = {},
+    nameplate = {},
+    group = {
+        list = {},
+    },
+}
+
 function Fuyutsui:OnInitialize()
+    self.state = {}
+    self.blocks = {}
     -- 使用“默认”配置文件，而非特定角色的配置文件。
     -- https://www.wowace.com/projects/ace3/pages/api/ace-db-3-0
     self.db = LibStub("AceDB-3.0"):New("FuyutsuiADB", self.defaults, true)
-    self.state = {}
-    --- 从旧版 ## SavedVariablesPerCharacter: FuyutsuiDB 迁入 db.char（仅一次）
-    do
-        local legacy = rawget(_G, "FuyutsuiDB")
-        if type(legacy) == "table" then
-            local ch = self.db.char
-            if legacy.aoeMode ~= nil then ch.aoeMode = legacy.aoeMode end
-            if legacy.cooldowns ~= nil then ch.cooldowns = legacy.cooldowns end
-            if legacy.dpsMode ~= nil then ch.dpsMode = legacy.dpsMode end
-            wipe(legacy)
-        end
-    end
     -- 注册一个选项表，并将其添加到暴雪选项窗口中。
     -- https://www.wowace.com/projects/ace3/pages/api/ace-config-3-0
     AC:RegisterOptionsTable("Fuyutsui_Options", self.options)
@@ -32,6 +37,7 @@ function Fuyutsui:OnInitialize()
     self:RegisterChatCommand("Fuyutsui", "SlashCommand")
 
     self:GetCharacterInfo()
+    self:loadPlayerBlocks(self.state.specIndex)
 end
 
 function Fuyutsui:OnEnable()
@@ -87,29 +93,32 @@ function Fuyutsui:OnEnable()
     self:RegisterEvent("ACTIONBAR_HIDEGRID")
     self:RegisterEvent("ACTIONBAR_SHOWGRID")
 
-    self:PLAYER_LOGIN()
+    self:GetCharacterInfo()
+
     if self.StartFrameUpdates then
         self:StartFrameUpdates()
     end
 end
 
+-- 首次登录获取角色信息
 function Fuyutsui:GetCharacterInfo()
-    local className, classFilename, classId = UnitClass("player")
-    local specIndex = C_SpecializationInfo.GetSpecialization()
-    local specID, specName, _, _, role = C_SpecializationInfo.GetSpecializationInfo(specIndex)
-
-    self:Print("职业:", className, "职业文件名:", classFilename, "职业ID:", classId,
-        "专精索引:", specIndex, "专精ID:", specID, "专精名称:", specName, "专精角色:", role)
     self.db.char.level = UnitLevel("player")
     self.state.name = UnitName("player")
     self.state.GUID = UnitGUID("player")
     self.state.className = className
     self.state.classFilename = classFilename
     self.state.classId = classId
-    self.state.specIndex = specIndex
+    self.state.specIndex = C_SpecializationInfo.GetSpecialization()
+    self.state.classColor = RAID_CLASS_COLORS[classFilename].colorStr
+end
+
+-- 获取玩家专精信息
+function Fuyutsui:GetCharacterSpecInfo()
+    local specID, specName, _, _, role = C_SpecializationInfo.GetSpecializationInfo(self.state.specIndex)
     self.state.specID = specID
     self.state.specName = specName
     self.state.specRole = role
+    self.state.specRange = fu.rangeSpecID[specID]
 end
 
 local function CharCfg()
@@ -193,15 +202,15 @@ function Fuyutsui:SlashCommand(input, editbox)
         return
     end
 
-    -- 游戏内功能（原 Fuyutsui_SlashHandler）
+    -- 游戏内功能
     local c = self.db and self.db.char
     if command == "cd" then
         if not c then return end
-        c.cooldowns = (c.cooldowns == 0) and 1 or 0
+        c.cooldowns = (c.cooldowns == 0) and 1 / 255 or 0
         self:SwitchCooldown()
     elseif command == "cd on" then
         if not c then return end
-        c.cooldowns = 1
+        c.cooldowns = 1 / 255
         self:SwitchCooldown()
     elseif command == "cd off" then
         if not c then return end
@@ -209,7 +218,7 @@ function Fuyutsui:SlashCommand(input, editbox)
         self:SwitchCooldown()
     elseif command == "aoemode" then
         if not c then return end
-        c.aoeMode = (c.aoeMode == 0) and 1 or 0
+        c.aoeMode = (c.aoeMode == 0) and 1 / 255 or 0
         self:SwitchAoeMode()
     elseif command == "aoemode auto" then
         if not c then return end
@@ -217,15 +226,15 @@ function Fuyutsui:SlashCommand(input, editbox)
         self:SwitchAoeMode()
     elseif command == "aoemode aoe" then
         if not c then return end
-        c.aoeMode = 1
+        c.aoeMode = 1 / 255
         self:SwitchAoeMode()
     elseif command == "dpsmode" then
         if not c then return end
-        c.dpsMode = (c.dpsMode == 0) and 1 or 0
+        c.dpsMode = (c.dpsMode == 0) and 1 / 255 or 0
         self:SwitchDpsMode()
     elseif command == "dpsmode manual" then
         if not c then return end
-        c.dpsMode = 1
+        c.dpsMode = 1 / 255
         self:SwitchDpsMode()
     elseif command == "dpsmode assistant" then
         if not c then return end
@@ -244,12 +253,12 @@ function Fuyutsui:SlashCommand(input, editbox)
         print("切换输出模式为|cff00ff00一键辅助|r: /fu dpsmode assistant")
         print("界面设置(Ace): /fu options")
     elseif command == "gui" then
-        if fu.OpenInfoGUI then
-            fu.OpenInfoGUI()
+        if self.OpenInfoGUI then
+            self:OpenInfoGUI()
         end
     else
-        if fu.OpenInfoGUI then
-            fu.OpenInfoGUI()
+        if self.OpenInfoGUI then
+            self:OpenInfoGUI()
         elseif self.optionsFrame and self.optionsFrame.name then
             Settings.OpenToCategory(self.optionsFrame.name)
         else
@@ -258,40 +267,7 @@ function Fuyutsui:SlashCommand(input, editbox)
     end
 end
 
-function SetTestSecret(set)
-    SetCVar("secretChallengeModeRestrictionsForced", set)
-    SetCVar("secretCombatRestrictionsForced", set)
-    SetCVar("secretEncounterRestrictionsForced", set)
-    SetCVar("secretMapRestrictionsForced", set)
-    SetCVar("secretPvPMatchRestrictionsForced", set)
-    SetCVar("secretAuraDataRestrictionsForced", set)
-    SetCVar("scriptErrors", set);
-    SetCVar("doNotFlashLowHealthWarning", set);
-    print("|cff00ff00[Fuyutsui]|r 已设置测试模式: " .. (set == 1 and "|cff00ff00开启|r" or "|cffff0000关闭|r"))
-end
-
--- /script SetTestSecret(0)
-SetTestSecret(1)
-
-function FuGetAuraDate(unit)
-    for i = 1, 40 do
-        local aura = C_UnitAuras.GetAuraDataByIndex(unit, i)
-        if aura then
-            for key, value in pairs(aura) do
-                if key == "name" then
-                    print(value, issecretvalue(key), issecretvalue(value))
-                end
-            end
-        end
-    end
-end
-
--- /script FuGetAuraDate("player", id)
-
----@param reversed boolean 是否逆序
----@param forceParty boolean 是否强制使用队伍
----@return function 迭代器
-function fu.IterateGroupMembers(reversed, forceParty)
+function Fuyutsui:IterateGroupMembers(reversed, forceParty)
     local unit = (not forceParty and IsInRaid()) and 'raid' or 'party'
     local numGroupMembers = unit == 'party' and GetNumSubgroupMembers() or GetNumGroupMembers()
     local i = reversed and numGroupMembers or (unit == 'party' and 0 or 1)
@@ -307,7 +283,7 @@ function fu.IterateGroupMembers(reversed, forceParty)
     end
 end
 
-function fu.creatColorCurve(point, b)
+function Fuyutsui:creatColorCurve(point, b)
     local curve = C_CurveUtil.CreateColorCurve()
     curve:SetType(Enum.LuaCurveType.Linear)
     curve:AddPoint(0, CreateColor(0, 0, 0, 1))

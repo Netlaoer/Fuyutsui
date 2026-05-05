@@ -1,5 +1,5 @@
 local _, fu = ...
-if fu.classId ~= 2 then return end
+if Fuyutsui.state.classId ~= 2 then return end
 
 Fuyutsui.ClassBlocks = {
     [1] = {
@@ -30,10 +30,10 @@ Fuyutsui.ClassBlocks = {
         [23] = { type = "block", name = "施法目标" },
         [24] = { type = "block", name = "目标距离" },
 
-        [25] = { type = "aura", name = "神圣意志", auraRef = fu.Auras["神圣意志"], showKey = "remaining" },
-        [26] = { type = "aura", name = "圣光灌注", auraRef = fu.Auras["圣光灌注"], showKey = "remaining" },
-        [27] = { type = "aura", name = "灌注层数", auraRef = fu.Auras["灌注层数"], showKey = "count" },
-        [28] = { type = "aura", name = "神性层数", auraRef = fu.Auras["神性之手"], showKey = "count" },
+        [25] = { type = "aura", name = "神圣意志", auraName = "神圣意志", showKey = "remaining" },
+        [26] = { type = "aura", name = "圣光灌注", auraName = "圣光灌注", showKey = "remaining" },
+        [27] = { type = "aura", name = "灌注层数", auraName = "圣光灌注", showKey = "count" },
+        [28] = { type = "aura", name = "神性层数", auraName = "神性之手", showKey = "count" },
 
         [31] = { type = "spell", spellId = 115750, name = "盲目之光" },
         [32] = { type = "spell", spellId = 853, name = "制裁之锤" },
@@ -56,7 +56,7 @@ Fuyutsui.ClassBlocks = {
             healthPercent = 1,
             role = 2,
             dispel = 3,
-            aura = {
+            auras = {
                 [4] = { 156322 },        -- 永恒之火, 156322
                 [5] = { 1244893 },       -- 救世道标, 1244893
                 [6] = { 53563, 156910 }, -- 圣光道标, 信仰道标, 53563, 156910
@@ -87,15 +87,15 @@ Fuyutsui.ClassBlocks = {
 
         [21] = { type = "block", name = "神圣能量" },
 
-        [22] = { type = "block", aura = "神圣意志", auraRef = fu.Auras["神圣意志"], showKey = "remaining" },
-        [23] = { type = "block", aura = "神圣壁垒", auraRef = fu.Auras["神圣壁垒"], showKey = "remaining" },
-        [24] = { type = "block", aura = "圣洁武器", auraRef = fu.Auras["圣洁武器"], showKey = "remaining" },
-        [25] = { type = "block", aura = "闪耀之光", auraRef = fu.Auras["闪耀之光"], showKey = "remaining" },
-        [26] = { type = "block", aura = "闪光层数", auraRef = fu.Auras["闪耀之光"], showKey = "count" },
-        [27] = { type = "block", aura = "神圣军备", auraRef = fu.Auras["神圣军备"], showKey = "isIcon" },
-        [28] = { type = "block", aura = "奉献", auraRef = fu.Auras["奉献"], showKey = "remaining" },
-        [29] = { type = "block", aura = "复仇之怒", auraRef = fu.Auras["复仇之怒"], showKey = "remaining" },
-        [30] = { type = "block", aura = "圣光之锤", auraRef = fu.Auras["圣光之锤"], showKey = "remaining" },
+        [22] = { type = "block", aura = "神圣意志", auraName = "神圣意志", showKey = "remaining" },
+        [23] = { type = "block", aura = "神圣壁垒", auraName = "神圣壁垒", showKey = "remaining" },
+        [24] = { type = "block", aura = "圣洁武器", auraName = "圣洁武器", showKey = "remaining" },
+        [25] = { type = "block", aura = "闪耀之光", auraName = "闪耀之光", showKey = "remaining" },
+        [26] = { type = "block", aura = "闪光层数", auraName = "闪耀之光", showKey = "count" },
+        [27] = { type = "block", aura = "神圣军备", auraName = "神圣军备", showKey = "isIcon" },
+        [28] = { type = "block", aura = "奉献", auraName = "奉献", showKey = "remaining" },
+        [29] = { type = "block", aura = "复仇之怒", auraName = "复仇之怒", showKey = "remaining" },
+        [30] = { type = "block", aura = "圣光之锤", auraName = "圣光之锤", showKey = "remaining" },
 
         [31] = { type = "spell", spellId = 115750, name = "盲目之光" },
         [32] = { type = "spell", spellId = 853, name = "制裁之锤" },
@@ -149,10 +149,10 @@ Fuyutsui.ClassBlocks = {
         [22] = { type = "block", name = "爆发开关" },
         [23] = { type = "block", name = "AOE开关" },
         [24] = { type = "block", name = "输出模式" },
-        [25] = { type = "aura", name = "神圣意志", auraRef = fu.Auras["神圣意志"], showKey = "remaining" },
-        [26] = { type = "aura", name = "复仇之怒", auraRef = fu.Auras["复仇之怒"], showKey = "remaining" },
-        [27] = { type = "aura", name = "处决宣判", auraRef = fu.Auras["处决宣判"], showKey = "remaining" },
-        [28] = { type = "aura", name = "圣光之锤", auraRef = fu.Auras["圣光之锤"], showKey = "remaining" },
+        [25] = { type = "aura", name = "神圣意志", auraName = "神圣意志", showKey = "remaining" },
+        [26] = { type = "aura", name = "复仇之怒", auraName = "复仇之怒", showKey = "remaining" },
+        [27] = { type = "aura", name = "处决宣判", auraName = "处决宣判", showKey = "remaining" },
+        [28] = { type = "aura", name = "圣光之锤", auraName = "圣光之锤", showKey = "remaining" },
 
         [31] = { type = "spell", spellId = 115750, name = "盲目之光" },
         [32] = { type = "spell", spellId = 853, name = "制裁之锤" },
@@ -172,205 +172,6 @@ Fuyutsui.ClassBlocks = {
 
         [70] = {
             type = "group_blocks",
-            block_num = 3,
-            healthPercent = 1,
-            role = 2,
-            dispel = 3,
-        },
-
-    },
-}
-
-local oldBlocks = {
-    [1] = {
-        powerType = "MANA",
-        blocks = {
-            ["神圣能量"] = 21,
-            ["施法技能"] = 22,
-            ["施法目标"] = 23,
-            ["目标距离"] = 24,
-        },
-        auras = {
-            ["神圣意志"] = {
-                index = 25,
-                auraRef = fu.Auras["神圣意志"],
-                showKey = "remaining",
-            },
-            ["圣光灌注"] = {
-                index = 26,
-                auraRef = fu.Auras["圣光灌注"],
-                showKey = "remaining",
-            },
-            ["灌注层数"] = {
-                index = 27,
-                auraRef = fu.Auras["灌注层数"],
-                showKey = "count",
-            },
-            ["神性层数"] = {
-                index = 28,
-                auraRef = fu.Auras["神性之手"],
-                showKey = "count",
-            },
-        },
-        spellCooldown = {
-            [115750] = { index = 31, name = "盲目之光" },
-            [853] = { index = 32, name = "制裁之锤" },
-            [642] = { index = 33, name = "圣盾术" },
-            [6940] = { index = 34, name = "牺牲祝福" },
-            [1044] = { index = 35, name = "自由祝福" },
-            [1022] = { index = 36, name = "保护祝福" },
-            [633] = { index = 37, name = "圣疗术" },
-            [20473] = { index = 38, name = "神圣震击", charge = 39 },
-            [4987] = { index = 40, name = "清洁术" },
-            [275773] = { index = 41, name = "审判" },
-            [375576] = { index = 42, name = "圣洁鸣钟" },
-            [114165] = { index = 43, name = "神圣棱镜" },
-            [31821] = { index = 44, name = "光环掌握" },
-            [200025] = { index = 45, name = "美德道标" },
-        },
-
-        group_blocks = {
-            unit_start = 70,
-            block_num = 6,
-            healthPercent = 1,
-            role = 2,
-            dispel = 3,
-            aura = {
-                [4] = { 156322 },        -- 永恒之火, 156322
-                [5] = { 1244893 },       -- 救世道标, 1244893
-                [6] = { 53563, 156910 }, -- 圣光道标, 信仰道标, 53563, 156910
-            },
-        },
-    },
-    [2] = {
-
-        powerType = "MANA",
-        blocks = {
-            ["神圣能量"] = 21,
-            auras = {
-                ["神圣意志"] = {
-                    index = 22,
-                    auraRef = fu.Auras["神圣意志"],
-                    showKey = "remaining",
-                },
-                ["神圣壁垒"] = {
-                    index = 23,
-                    auraRef = fu.Auras["神圣壁垒"],
-                    showKey = "remaining",
-                },
-                ["圣洁武器"] = {
-                    index = 24,
-                    auraRef = fu.Auras["圣洁武器"],
-                    showKey = "remaining",
-                },
-                ["闪耀之光"] = {
-                    index = 25,
-                    auraRef = fu.Auras["闪耀之光"],
-                    showKey = "remaining",
-                },
-                ["闪光层数"] = {
-                    index = 26,
-                    auraRef = fu.Auras["闪耀之光"],
-                    showKey = "count",
-                },
-                ["神圣军备"] = {
-                    index = 27,
-                    auraRef = fu.Auras["神圣军备"],
-                    showKey = "isIcon",
-                },
-                ["奉献"] = {
-                    index = 28,
-                    auraRef = fu.Auras["奉献"],
-                    showKey = "remaining",
-                },
-                ["复仇之怒"] = {
-                    index = 29,
-                    auraRef = fu.Auras["复仇之怒"],
-                    showKey = "remaining",
-                },
-                ["圣光之锤"] = {
-                    index = 30,
-                    auraRef = fu.Auras["圣光之锤"],
-                    showKey = "remaining",
-                },
-            },
-        },
-
-        spellCooldown = {
-            [115750] = { index = 31, name = "盲目之光" },
-            [853] = { index = 32, name = "制裁之锤" },
-            [642] = { index = 33, name = "圣盾术" },
-            [6940] = { index = 34, name = "牺牲祝福" },
-            [1044] = { index = 35, name = "自由祝福" },
-            [1022] = { index = 36, name = "保护祝福" },
-            [633] = { index = 37, name = "圣疗术" },
-            [432459] = { index = 38, name = "神圣壁垒", charge = 39 },
-            [213644] = { index = 40, name = "清毒术" },
-            [275779] = { index = 41, name = "审判" },
-            [375576] = { index = 42, name = "圣洁鸣钟" },
-            [31935] = { index = 43, name = "复仇者之盾" },
-            [26573] = { index = 44, name = "奉献" },
-            [53600] = { index = 45, name = "正义盾击" },
-            [204019] = { index = 46, name = "祝福之锤" },
-        },
-
-        group_blocks = {
-            unit_start = 70,
-            block_num = 3,
-            healthPercent = 1,
-            role = 2,
-            dispel = 3,
-        },
-    },
-
-    [3] = {
-        powerType = "MANA",
-        blocks = {
-            ["神圣能量"] = 21,
-            ["爆发开关"] = 26,
-            ["AOE开关"] = 27,
-            ["输出模式"] = 28,
-            auras = {
-                ["神圣意志"] = {
-                    index = 22,
-                    auraRef = fu.Auras["神圣意志"],
-                    showKey = "remaining",
-                },
-                ["复仇之怒"] = {
-                    index = 23,
-                    auraRef = fu.Auras["复仇之怒"],
-                    showKey = "remaining",
-                },
-                ["处决宣判"] = {
-                    index = 24,
-                    auraRef = fu.Auras["处决宣判"],
-                    showKey = "remaining",
-                },
-                ["圣光之锤"] = {
-                    index = 25,
-                    auraRef = fu.Auras["圣光之锤"],
-                    showKey = "remaining",
-                },
-            },
-        },
-        spellCooldown = {
-            [115750] = { index = 31, name = "盲目之光" },
-            [853] = { index = 32, name = "制裁之锤" },
-            [642] = { index = 33, name = "圣盾术" },
-            [6940] = { index = 34, name = "牺牲祝福" },
-            [1044] = { index = 35, name = "自由祝福" },
-            [1022] = { index = 36, name = "保护祝福" },
-            [633] = { index = 37, name = "圣疗术" },
-            [213644] = { index = 38, name = "清毒术" },
-            [20271] = { index = 39, name = "审判", charge = 40 },
-            [375576] = { index = 41, name = "圣洁鸣钟" },
-            [184575] = { index = 42, name = "公正之剑" },
-            [343527] = { index = 43, name = "处决宣判" },
-            [255937] = { index = 44, name = "灰烬觉醒" },
-        },
-
-        group_blocks = {
-            unit_start = 70,
             block_num = 3,
             healthPercent = 1,
             role = 2,

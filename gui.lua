@@ -347,7 +347,7 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
 
 AC:RegisterOptionsTable("Fuyutsui_Options", Fuyutsui.options, nil)
 
-function fu.OpenInfoGUI()
+function Fuyutsui:OpenInfoGUI()
     ACD:SetDefaultSize("Fuyutsui_Options", 520, 480)
     ACD:Open("Fuyutsui_Options")
     local root = ACD.OpenFrames["Fuyutsui_Options"]
