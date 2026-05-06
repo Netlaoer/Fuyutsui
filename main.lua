@@ -92,7 +92,7 @@ end
 -- 驱散能力映射
 local dispelAbilities = {
     [1] = { 527, 360823, 4987, 115450, 88423, 77130 },              -- 魔法驱散
-    [2] = { 383016, 51886, 392378, 2782, 475, 77130 },              -- 诅咒驱散
+    [2] = { 383016, 51886, 392378, 2782, 475 },                     -- 诅咒驱散
     [3] = { 390632, 213634, 393024, 213644, 388874, 218164 },       -- 疾病驱散
     [4] = { 392378, 2782, 393024, 213644, 388874, 218164, 365585 }, -- 中毒驱散
     [11] = {}                                                       -- 流血驱散
@@ -119,9 +119,8 @@ local function updateCooldownSpellKnown()
     if not blocks.spells then return end
     for spellID, info in pairs(blocks.spells) do
         local isKnown = IsSpellKnown(spellID)
-        local isInBook = IsSpellInSpellBook(spellID)
         local index = info.index
-        if isKnown or isInBook or info.forcedKnown then
+        if isKnown or info.forcedKnown then
             spells[spellID] = info
         else
             Fuyutsui:CreatTexture(index, 1)

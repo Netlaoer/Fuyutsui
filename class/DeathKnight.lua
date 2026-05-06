@@ -68,6 +68,11 @@ Fuyutsui.ClassBlocks = {
 
         [24] = { type = "aura", name = "黑暗援助", auraName = "黑暗援助", showKey = "remaining" },
 
+        [40] = { type = "spell", spellId = 49576, name = "死亡之握" },
+        [41] = { type = "spell", spellId = 51052, name = "反魔法领域" },
+        [42] = { type = "spell", spellId = 221562, name = "窒息" },
+        [43] = { type = "spell", spellId = 207167, name = "致盲冰雨" },
+
     },
     [3] = {
 
@@ -114,6 +119,11 @@ Fuyutsui.ClassBlocks = {
         [35] = { type = "aura", name = "枯萎凋零", auraName = "枯萎凋零", showKey = "remaining" },
 
         [36] = { type = "block", name = "疾病判断" },
+
+        [40] = { type = "spell", spellId = 49576, name = "死亡之握" },
+        [41] = { type = "spell", spellId = 51052, name = "反魔法领域" },
+        [42] = { type = "spell", spellId = 221562, name = "窒息" },
+        [43] = { type = "spell", spellId = 207167, name = "致盲冰雨" },
 
         [44] = { type = "spell", spellId = 46584, name = "亡者复生" },
         [45] = { type = "spell", spellId = 42650, name = "亡者大军" },

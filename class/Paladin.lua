@@ -114,7 +114,7 @@ Fuyutsui.ClassBlocks = {
 
         [70] = {
             type = "group",
-            block_num = 3,
+            num = 3,
             healthPercent = 1,
             role = 2,
             dispel = 3,
@@ -170,7 +170,7 @@ Fuyutsui.ClassBlocks = {
 
         [70] = {
             type = "group",
-            block_num = 3,
+            num = 3,
             healthPercent = 1,
             role = 2,
             dispel = 3,
