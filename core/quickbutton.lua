@@ -6,9 +6,22 @@ local function CharCfg()
     return Fuyutsui.db and Fuyutsui.db.char
 end
 
+function Fuyutsui:UpdateQuickToggleVisibility()
+    local f = self.quickToggleFrame
+    if not f then return end
+    local c = CharCfg()
+    local show = not c or (c.quickButtonShow ~= false)
+    self:RefreshQuickToggleAppearance()
+    if show then
+        f:Show()
+    else
+        f:Hide()
+    end
+end
+
 function Fuyutsui:RefreshQuickToggleAppearance()
     local f = self.quickToggleFrame
-    if not f or not f:IsShown() then return end
+    if not f then return end
     local c = CharCfg()
     if not c then return end
     local cdOn = (c.cooldowns or 0) == 1
@@ -43,7 +56,7 @@ end
 
 function Fuyutsui:InitQuickToggleButton()
     if self.quickToggleFrame then
-        self:RefreshQuickToggleAppearance()
+        self:UpdateQuickToggleVisibility()
         return
     end
 
@@ -163,5 +176,5 @@ function Fuyutsui:InitQuickToggleButton()
     end)
 
     self.quickToggleFrame = f
-    self:RefreshQuickToggleAppearance()
+    self:UpdateQuickToggleVisibility()
 end

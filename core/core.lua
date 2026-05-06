@@ -307,6 +307,7 @@ Fuyutsui.defaults = {
         dpsMode = 0,
         quickButtonCX = 180,
         quickButtonCY = -100,
+        quickButtonShow = true,
     },
 }
 Fuyutsui.options = {

@@ -265,7 +265,7 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
                     type = "description",
                     order = 0,
                     name =
-                    "以下项保存在 |cffffffffFuyutsuiADB|r 的 |cffffffffdb.char|r（按角色），与 |cffffffff/fu cd|r、|cffffffff/fu aoemode|r、|cffffffff/fu dpsmode|r 一致。",
+                    "以下项保存在 |cffffffffFuyutsuiADB|r 的 |cffffffffdb.char|r（按角色），与 |cffffffff/fu cd|r、|cffffffff/fu aoemode|r、|cffffffff/fu dpsmode|r 一致；快捷按钮显示与位置亦存于本页。",
                 },
                 cooldowns = {
                     type = "toggle",
@@ -327,6 +327,25 @@ Fuyutsui Tinkerer是由Fuyutsuki Electronics研发的一块|cFF00FF00免费|r网
                             Fuyutsui:SwitchDpsMode()
                         else
                             Fuyutsui:SyncBlockFromDB()
+                        end
+                    end,
+                },
+                quickButtonShow = {
+                    type = "toggle",
+                    order = 40,
+                    name = "显示快捷按钮",
+                    desc = "在屏幕上显示可拖动的爆发 / AOE / 输出模式小按钮（与独立位置一并保存在本角色数据中，/reload 后保留）。",
+                    width = "full",
+                    get = function()
+                        local c = CharCfg()
+                        return not c or (c.quickButtonShow ~= false)
+                    end,
+                    set = function(_, val)
+                        local c = CharCfg()
+                        if not c then return end
+                        c.quickButtonShow = val and true or false
+                        if Fuyutsui and Fuyutsui.UpdateQuickToggleVisibility then
+                            Fuyutsui:UpdateQuickToggleVisibility()
                         end
                     end,
                 },
