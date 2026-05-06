@@ -118,7 +118,6 @@ local function updateCooldownSpellKnown()
     spells = {}
     if not blocks.spells then return end
     for spellID, info in pairs(blocks.spells) do
-        print(spellID, info.index, info.name, info.charge)
         local isKnown = IsSpellKnown(spellID)
         local isInBook = IsSpellInSpellBook(spellID)
         local index = info.index
@@ -280,11 +279,9 @@ end
 -- 载入玩家宏
 function Fuyutsui:loadPlayerMacros()
     if not self.MacrosList then
-        self:Print("|cffff0000载入玩家宏失败|r")
         return
     end
     local m = self.MacrosList
-    self:Print("|cffff0000载入玩家宏成功|r")
     self:CreateMacro(m.dynamicSpells, m.staticSpells, m.specialSpells)
 end
 
