@@ -307,6 +307,7 @@ state:
 5: # 牧师
   keymap: "priest.yml"
   1:
+    目标生命值: {step: 21, type: "int" }
     施法技能: {step: 22, type: "int" }
     施法目标: {step: 23, type: "int" }
     虚空之盾: {step: 24, type: "int" }
@@ -316,7 +317,7 @@ state:
     暗影愈合: {step: 28, type: "int" }
     暗影层数: {step: 29, type: "int" }
     福音层数: {step: 30, type: "int" }
-    目标生命值: {step: 46, type: "int" }
+    
     spells:
       心灵尖啸: {step: 31, type: "int" }
       群体驱散: {step: 32, type: "int" }

@@ -96,13 +96,20 @@ def _priest_discipline_logic(state_dict):
     暗影愈合阈值 = int(70 - (暗影愈合 * 2) + (暗影层数 * 15)) # 55 - 100
     涌动阈值 = int(80 - 圣光涌动 + (涌动层数 * 10)) # 70 - 80
 
+    耀阈值 = 90
+    if 耀 == 0:
+        耀阈值 = int(90 -  耀充能) # 90 - 72
+    elif 耀 > 0:
+        耀阈值 = int(72 -  耀充能) # 90 - 72
+    
     dispel_unit_magic, _ = get_unit_with_dispel_type(state_dict, 1)
     dispel_unit_disease, _ = get_unit_with_dispel_type(state_dict, 3)
     最低单位, 最低生命值 = get_lowest_health_unit(state_dict, 100)
     无救赎最低, 无救赎生命值 = get_lowest_health_unit_without_aura(state_dict, "救赎", 100)
     无盾最低, 无盾生命值 = get_lowest_health_unit_without_aura(state_dict, "真言术：盾", 101)
     无盾坦克, 无盾坦克生命值 = get_unit_with_role_and_without_aura_name(state_dict, 1, "真言术：盾")
-    无救赎90数量 = count_units_without_aura_below_health(state_dict, "救赎", 90)
+    无救赎数90 = count_units_without_aura_below_health(state_dict, "救赎", 90)
+    无救赎数阈值 = count_units_without_aura_below_health(state_dict, "救赎", 耀阈值)
     有救赎数量 = count_units_with_aura(state_dict, "救赎")
 
     驱散单位 = None
@@ -113,8 +120,12 @@ def _priest_discipline_logic(state_dict):
             驱散单位 = dispel_unit_magic
     if 驱散单位 is None:
         驱散单位 = dispel_unit_disease
+    if 施法技能 == 30:
+        无救赎数90 = int(无救赎数90 - 5)
+        无救赎数阈值 = int(无救赎数阈值 - 5)
 
     unit_info = {
+        "耀阈值": 耀阈值,
         "暗影愈合阈值": 暗影愈合阈值,
         "驱散单位": 驱散单位,
         "最低单位": 最低单位,
@@ -149,10 +160,10 @@ def _priest_discipline_logic(state_dict):
             elif 1 <= 目标类型 <= 3 and 战斗 and 一键辅助 == 14:
                 current_step = "施放 暗言术：痛"
                 action_hotkey = get_hotkey(0, "暗言术：痛")
-            elif 无救赎90数量 >= 5 and 耀 == 0 and 福音层数 > 0:
+            elif 无救赎数90 >= 5 and 耀 == 0 and 福音层数 > 0:
                 current_step = "施放 真言术：耀"
                 action_hotkey = get_hotkey(0, "真言术：耀")
-            elif 无救赎90数量 >= 5 and 福音 == 0:
+            elif 无救赎数90 >= 5 and 福音 == 0:
                 current_step = "施放 福音"
                 action_hotkey = get_hotkey(0, "福音")
             elif 圣光涌动 > 0 and 暗影愈合 == 0 and 无救赎最低 is not None and 无救赎生命值 is not None and 无救赎生命值 < 90:
@@ -173,7 +184,7 @@ def _priest_discipline_logic(state_dict):
             elif 盾 == 0 and 无盾坦克 is not None:
                 current_step = f"施放 真言术：盾 on {无盾坦克}, 无盾单位"
                 action_hotkey = get_hotkey(int(无盾坦克), "真言术：盾")
-            elif 无救赎90数量 >= 5 and 耀 == 0 and 施法技能 != 30:
+            elif 无救赎数90 >= 5 and 耀 == 0 and 施法技能 != 30:
                 current_step = "施放 真言术：耀"
                 action_hotkey = get_hotkey(0, "真言术：耀")
             elif 苦修 == 0 and 最低单位 is not None and 最低生命值 is not None and 最低生命值 < 75:
@@ -201,10 +212,10 @@ def _priest_discipline_logic(state_dict):
             elif 1 <= 目标类型 <= 3 and 战斗 and 一键辅助 == 14:
                 current_step = "施放 暗言术：痛"
                 action_hotkey = get_hotkey(0, "暗言术：痛")
-            elif 无救赎90数量 >= 2 and 耀 == 0 and 福音层数 > 0:
+            elif 无救赎数90 >= 2 and 耀 == 0 and 福音层数 > 0:
                 current_step = "施放 真言术：耀"
                 action_hotkey = get_hotkey(0, "真言术：耀")
-            elif 无救赎90数量 >= 2 and 福音 == 0:
+            elif 无救赎数90 >= 2 and 福音 == 0:
                 current_step = "施放 福音"
                 action_hotkey = get_hotkey(0, "福音")
             elif 灭 == 0 and 1 <= 目标类型 <= 3 and 战斗 and 目标生命值 < 20:
@@ -228,7 +239,7 @@ def _priest_discipline_logic(state_dict):
             elif 盾 == 0 and 无盾坦克 is not None:
                 current_step = f"施放 真言术：盾 on {无盾坦克}, 无盾单位"
                 action_hotkey = get_hotkey(int(无盾坦克), "真言术：盾")
-            elif 无救赎90数量 >= 3 and 耀 == 0 and 施法技能 != 30:
+            elif 无救赎数90 >= 3 and 耀 == 0 and 施法技能 != 30:
                 current_step = "施放 真言术：耀"
                 action_hotkey = get_hotkey(0, "真言术：耀")
             elif 苦修 == 0 and 最低单位 is not None and 最低生命值 is not None and 最低生命值 < 75:
@@ -264,10 +275,10 @@ def _priest_discipline_logic(state_dict):
             elif 圣光涌动 > 0 and 无救赎最低 is not None and 无救赎生命值 < 90:
                 current_step = f"施放 快速治疗 on {无救赎最低}, 无救赎生命低于90%的单位"
                 action_hotkey = get_hotkey(int(无救赎最低), "快速治疗")
-            elif 福音 == 0 and (无救赎90数量 >= 4 or (队伍类型 == 46 and 无救赎90数量 >= 1)):
+            elif 福音 == 0 and (无救赎数90 >= 4 or (队伍类型 == 46 and 无救赎数90 >= 1)):
                 current_step = "施放 福音"
                 action_hotkey = get_hotkey(0, "福音")
-            elif 耀 == 0 and 施法 == 0 and (无救赎90数量 >= 4 or (队伍类型 == 46 and 无救赎90数量 >= 1)):
+            elif 耀 == 0 and 施法 == 0 and (无救赎数90 >= 4 or (队伍类型 == 46 and 无救赎数90 >= 1)):
                 current_step = "施放 真言术：耀"
                 action_hotkey = get_hotkey(0, "真言术：耀")
             elif 灭 == 0:

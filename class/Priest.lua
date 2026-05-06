@@ -22,10 +22,9 @@ Fuyutsui.ClassBlocks = {
         [18] = { type = "block", name = "首领战" },
         [19] = { type = "block", name = "难度" },
         [20] = { type = "block", name = "英雄天赋" },
-
-        [21] = { type = "block", name = "施法技能" },
-        [22] = { type = "block", name = "施法目标" },
-        [23] = { type = "block", name = "目标生命值" },
+        [21] = { type = "block", name = "目标生命值" },
+        [22] = { type = "block", name = "施法技能" },
+        [23] = { type = "block", name = "施法目标" },
 
         [24] = { type = "aura", name = "虚空之盾", auraName = "虚空之盾", showKey = "remaining" },
         [25] = { type = "aura", name = "圣光涌动", auraName = "圣光涌动", showKey = "remaining" },
