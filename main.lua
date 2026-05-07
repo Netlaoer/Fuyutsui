@@ -361,6 +361,9 @@ function Fuyutsui:updatePlayerCastingInfo()
             local _, _, b = castingDurationColor:GetRGB()
             state.castingDuration = b
             self:CreatTexture(blocks.state["施法"], state.castingDuration)
+        else
+            state.castingDuration = 0
+            self:CreatTexture(blocks.state["施法"], 0)
         end
     else
         state.castingDuration = 0
@@ -378,6 +381,9 @@ function Fuyutsui:updatePlayerChannelingInfo()
             local _, _, b = channelDurationColor:GetRGB()
             state.channelingDuration = b
             self:CreatTexture(blocks.state["引导"], b)
+        else
+            state.channelingDuration = 0
+            self:CreatTexture(blocks.state["引导"], 0)
         end
     else
         state.channelingDuration = 0
