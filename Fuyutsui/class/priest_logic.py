@@ -38,7 +38,7 @@ action_map = {
 }
 # 找到失败法术，必须是法术有冷却时间，并且冷却时间为 0
 def _get_failed_spell(state_dict):
-    法术失败 = state_dict.get("法术失败", 0)
+    法术失败 = int(state_dict.get("法术失败", 0) or 0)
     spells = state_dict.get("spells") or {}
     spell_name = failed_spell_map.get(法术失败)
     if spell_name and spells.get(spell_name, -1) == 0:
@@ -51,33 +51,33 @@ def _priest_discipline_logic(state_dict):
     current_step = "无匹配技能"
     
     spells = state_dict.get("spells") or {}
-    战斗 = state_dict.get("战斗")
-    移动 = state_dict.get("移动")
-    施法 = state_dict.get("施法")
-    引导 = state_dict.get("引导")
-    生命值 = state_dict.get("生命值")
-    能量值 = state_dict.get("能量值")
-    一键辅助 = state_dict.get("一键辅助")
-    法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型", 0)
+    战斗 = int(state_dict.get("战斗") or 0)
+    移动 = int(state_dict.get("移动") or 0)
+    施法 = int(state_dict.get("施法") or 0)
+    引导 = int(state_dict.get("引导") or 0)
+    生命值 = int(state_dict.get("生命值") or 0)
+    能量值 = int(state_dict.get("能量值") or 0)
+    一键辅助 = int(state_dict.get("一键辅助") or 0)
+    法术失败 = int(state_dict.get("法术失败", 0) or 0)
+    目标类型 = int(state_dict.get("目标类型", 0) or 0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)
     难度 = int(state_dict.get("难度", 0) or 0)
     英雄天赋 = int(state_dict.get("英雄天赋", 0) or 0)
-    目标生命值 = state_dict.get("目标生命值", 0)
-    施法技能 = state_dict.get("施法技能", 0)
-    施法目标 = state_dict.get("施法目标", 0)
+    目标生命值 = int(state_dict.get("目标生命值", 0) or 0)
+    施法技能 = int(state_dict.get("施法技能", 0) or 0)
+    施法目标 = int(state_dict.get("施法目标", 0) or 0)
 
-    虚空之盾 = state_dict.get("虚空之盾", 0)
-    圣光涌动 = state_dict.get("圣光涌动", 0)
-    涌动层数 = state_dict.get("涌动层数", 0)
-    熵能裂隙 = state_dict.get("熵能裂隙", 0)    
-    福音层数 = state_dict.get("福音层数", 0)
-    暗影愈合 = state_dict.get("暗影愈合", 0)
-    暗影层数 = state_dict.get("暗影层数", 0)
-    祸福相依 = state_dict.get("祸福相依", 0)
-    祸福层数 = state_dict.get("祸福层数", 0)
+    虚空之盾 = int(state_dict.get("虚空之盾", 0) or 0)
+    圣光涌动 = int(state_dict.get("圣光涌动", 0) or 0)
+    涌动层数 = int(state_dict.get("涌动层数", 0) or 0)
+    熵能裂隙 = int(state_dict.get("熵能裂隙", 0) or 0)
+    福音层数 = int(state_dict.get("福音层数", 0) or 0)
+    暗影愈合 = int(state_dict.get("暗影愈合", 0) or 0)
+    暗影层数 = int(state_dict.get("暗影层数", 0) or 0)
+    祸福相依 = int(state_dict.get("祸福相依", 0) or 0)
+    祸福层数 = int(state_dict.get("祸福层数", 0) or 0)
 
     心灵尖啸 = spells.get("心灵尖啸", -1)
     群体驱散 = spells.get("群体驱散", -1)
@@ -96,13 +96,9 @@ def _priest_discipline_logic(state_dict):
     
     失败法术 = _get_failed_spell(state_dict)
 
-    目标有效 = False
-    if 战斗 and 1 <= 目标类型 <= 3:
-        目标有效 = True
-    
     耀阈值 = 90
-    if 耀 == 0: 耀阈值 = int(90 -  耀充能)
-    elif 耀 > 0: 耀阈值 = int(72 -  耀充能) 
+    if 耀 == 0: 耀阈值 = int(90 - (耀充能 * 0.6))
+    elif 耀 > 0: 耀阈值 = int(80 - (耀充能 * 0.6))
     
     dispel_unit_magic, _ = get_unit_with_dispel_type(state_dict, 1)
     dispel_unit_disease, _ = get_unit_with_dispel_type(state_dict, 3)
@@ -118,7 +114,7 @@ def _priest_discipline_logic(state_dict):
     if 施法技能 == 34: # 暗影愈合
         暗影层数 = int(暗影层数 - 1)
         涌动层数 = int(涌动层数 - 1)
-        最低生命值 = 最低生命值 + 30
+        if 最低生命值 is not None: 最低生命值 += 30
     
     if 施法技能 == 30: # 耀
         无救赎数_90 = int(无救赎数_90 - 5)
@@ -144,18 +140,18 @@ def _priest_discipline_logic(state_dict):
     if 无盾坦克 is not None and 无盾坦克生命值 is not None:
         需盾队伍单位 = 无盾坦克
     if 无盾最低 is not None and 无盾生命值 is not None:
-        if 无盾生命值 < 90 or 虚空之盾 > 0 or 祸福层数 >= 8:
+        if 无盾生命值 < 90 or 虚空之盾 > 0 or 祸福层数 >= 7:
             需盾队伍单位 = 无盾最低
     if 无救赎最低 is not None and 无救赎生命值 is not None:
-        if 无救赎生命值 < 90 or 虚空之盾 > 0 or 祸福层数 >= 8:
+        if 无救赎生命值 < 90 or 虚空之盾 > 0 or 祸福层数 >= 7:
             需盾队伍单位 = 无救赎最低
 
     需盾团队单位 = None # 需盾单位，倒序
     if 无盾最低 is not None and 无盾生命值 is not None:
-        if 无盾生命值 < (治疗限值 - 20) or 虚空之盾 > 0 or 祸福层数 >= 8:
+        if 无盾生命值 < (治疗限值 - 20) or 虚空之盾 > 0 or 祸福层数 >= 7:
             需盾团队单位 = 无盾最低
     if 无救赎最低 is not None and 无救赎生命值 is not None:
-        if 无救赎生命值 < (治疗限值 - 10) or 虚空之盾 > 0 or 祸福层数 >= 8:
+        if 无救赎生命值 < (治疗限值 - 10) or 虚空之盾 > 0 or 祸福层数 >= 7:
             需盾团队单位 = 无救赎最低
 
     快疗单位 = None
@@ -169,7 +165,9 @@ def _priest_discipline_logic(state_dict):
     if 暗影层数 > 0 and 最低单位 is not None and 最低生命值 is not None and 最低生命值 < 暗影愈合阈值:
         暗影愈合单位 = 最低单位
     
-    unit_info = { }
+    unit_info = { 
+        "需盾队伍单位": 需盾队伍单位
+    }
 
     if 引导 > 0:
         current_step = "引导,不执行任何操作"
@@ -190,15 +188,15 @@ def _priest_discipline_logic(state_dict):
             if 纯净术 == 0 and 驱散单位 is not None:
                 current_step = f"施放 纯净术 on {驱散单位}"
                 action_hotkey = get_hotkey(int(驱散单位), "纯净术")
-            elif 目标有效 and 一键辅助 == 14:
+            elif 战斗 and 1 <= 目标类型 <= 3 and 一键辅助 == 14:
                 current_step = "施放 暗言术：痛"
                 action_hotkey = get_hotkey(0, "暗言术：痛")
-            elif 灭 == 0 and 目标有效 and 目标生命值 < 20:
+            elif 灭 == 0 and 战斗 and 1 <= 目标类型 <= 3 and 目标生命值 < 20:
                 current_step = "施放 暗言术：灭"
                 action_hotkey = get_hotkey(0, "暗言术：灭")
             elif 无救赎数_阈值 >= 5 and 耀 == 0 and 福音层数 > 0:
                 current_step = "施放 真言术：耀"
-                action_hotkey = get_hotkey(0, "真言术：耀")
+                action_hotkey = get_hotkey(0, "耀")
             elif 无救赎数_90 >= 5 and 福音 == 0:
                 current_step = "施放 福音"
                 action_hotkey = get_hotkey(0, "福音")
@@ -216,8 +214,8 @@ def _priest_discipline_logic(state_dict):
                 action_hotkey = get_hotkey(int(最低单位), "苦修")
             elif 无救赎数_阈值 >= 5 and 耀 == 0 and not 移动:
                 current_step = "施放 真言术：耀"
-                action_hotkey = get_hotkey(0, "真言术：耀")
-            elif 目标有效 and 有救赎数量 > 0:
+                action_hotkey = get_hotkey(0, "耀")
+            elif 战斗 and 1 <= 目标类型 <= 3 and 有救赎数量 > 0:
                 if 灭 == 0:
                     current_step = "施放 暗言术：灭"
                     action_hotkey = get_hotkey(0, "暗言术：灭")
@@ -227,11 +225,11 @@ def _priest_discipline_logic(state_dict):
                 elif 苦修 == 0:
                     current_step = "施放 苦修"
                     action_hotkey = get_hotkey(0, "苦修")
-            elif 目标有效 and not 移动:
-                current_step = "施放 惩击"
-                action_hotkey = get_hotkey(0, "惩击")
+                elif not 移动:
+                    current_step = "施放 惩击"
+                    action_hotkey = get_hotkey(0, "惩击")
             else:
-                current_step = "战斗中-无匹配技能"
+                current_step = "无匹配技能"
         elif 队伍类型 == 46:
             if 纯净术 == 0 and 驱散单位 is not None:
                 current_step = f"施放 纯净术 on {驱散单位}"
@@ -239,15 +237,15 @@ def _priest_discipline_logic(state_dict):
             elif 暗影愈合单位 is not None and (not 移动 or 圣光涌动 > 0):
                 current_step = f"施放 暗影愈合 on {暗影愈合单位}, 暗影愈合"
                 action_hotkey = get_hotkey(int(暗影愈合单位), "快速治疗")
-            elif 目标有效 and 一键辅助 == 14:
+            elif 战斗 and 1 <= 目标类型 <= 3 and 一键辅助 == 14:
                 current_step = "施放 暗言术：痛"
                 action_hotkey = get_hotkey(0, "暗言术：痛")
-            elif 灭 == 0 and 目标有效 and 目标生命值 < 20:
+            elif 灭 == 0 and 战斗 and 1 <= 目标类型 <= 3 and 目标生命值 < 20:
                 current_step = "施放 暗言术：灭"
                 action_hotkey = get_hotkey(0, "暗言术：灭")
             elif (无救赎数_90 >= 2 or count_耀阈值 >= 3) and 耀 == 0 and 福音层数 > 0:
                 current_step = "施放 真言术：耀"
-                action_hotkey = get_hotkey(0, "真言术：耀")
+                action_hotkey = get_hotkey(0, "耀")
             elif (无救赎数_90 >= 2 or count_耀阈值 >= 3) and 福音 == 0:
                 current_step = "施放 福音"
                 action_hotkey = get_hotkey(0, "福音")
@@ -259,11 +257,11 @@ def _priest_discipline_logic(state_dict):
                 action_hotkey = get_hotkey(int(需盾队伍单位), "真言术：盾")
             elif not 移动 and 无救赎数_90 >= 3 and 耀 == 0:
                 current_step = "施放 真言术：耀"
-                action_hotkey = get_hotkey(0, "真言术：耀")
+                action_hotkey = get_hotkey(0, "耀")
             elif 苦修 == 0 and 虚空之盾 != 0 and 最低单位 is not None and 最低生命值 is not None and 最低生命值 < 75:
                 current_step = f"施放 苦修 on {最低单位}, 生命最低的单位"
                 action_hotkey = get_hotkey(int(最低单位), "苦修")
-            elif 目标有效:
+            elif 战斗 and 1 <= 目标类型 <= 3:
                 if 灭 == 0 and 有救赎数量 > 0:
                     current_step = "施放 暗言术：灭"
                     action_hotkey = get_hotkey(0, "暗言术：灭")
@@ -278,6 +276,8 @@ def _priest_discipline_logic(state_dict):
                     action_hotkey = get_hotkey(0, "惩击")
                 else:
                     current_step = "战斗中-无匹配技能"
+            else:
+                current_step = "无匹配技能"
     elif 英雄天赋 == 2:
         if 战斗:
             if 1 <= 目标类型 <= 3 and 一键辅助 == 14:
@@ -297,7 +297,7 @@ def _priest_discipline_logic(state_dict):
                 action_hotkey = get_hotkey(0, "福音")
             elif 耀 == 0 and 施法 == 0 and (无救赎数_90 >= 4 or (队伍类型 == 46 and 无救赎数_90 >= 1)):
                 current_step = "施放 真言术：耀"
-                action_hotkey = get_hotkey(0, "真言术：耀")
+                action_hotkey = get_hotkey(0, "耀")
             elif 灭 == 0:
                 current_step = "施放 暗言术：灭"
                 action_hotkey = get_hotkey(0, "暗言术：灭")
@@ -326,28 +326,28 @@ def _priest_holy_logic(state_dict):
     unit_info = {}
 
     spells = state_dict.get("spells") or {}
-    战斗 = state_dict.get("战斗")
-    移动 = state_dict.get("移动")
-    施法 = state_dict.get("施法")
-    引导 = state_dict.get("引导")
-    生命值 = state_dict.get("生命值")
-    能量值 = state_dict.get("能量值")
-    一键辅助 = state_dict.get("一键辅助")
-    法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型", 0)
+    战斗 = int(state_dict.get("战斗") or 0)
+    移动 = int(state_dict.get("移动") or 0)
+    施法 = int(state_dict.get("施法") or 0)
+    引导 = int(state_dict.get("引导") or 0)
+    生命值 = int(state_dict.get("生命值") or 0)
+    能量值 = int(state_dict.get("能量值") or 0)
+    一键辅助 = int(state_dict.get("一键辅助") or 0)
+    法术失败 = int(state_dict.get("法术失败", 0) or 0)
+    目标类型 = int(state_dict.get("目标类型", 0) or 0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)
     难度 = int(state_dict.get("难度", 0) or 0)
     英雄天赋 = int(state_dict.get("英雄天赋", 0) or 0)
 
-    施法技能 = state_dict.get("施法技能", 0)
-    施法目标 = state_dict.get("施法目标", 0)
+    施法技能 = int(state_dict.get("施法技能", 0) or 0)
+    施法目标 = int(state_dict.get("施法目标", 0) or 0)
 
-    织光者 = state_dict.get("织光者", 0)
-    织光层数 = state_dict.get("织光层数", 0)
-    圣光涌动 = state_dict.get("圣光涌动", 0)
-    祈福 = state_dict.get("祈福", 0)
+    织光者 = int(state_dict.get("织光者", 0) or 0)
+    织光层数 = int(state_dict.get("织光层数", 0) or 0)
+    圣光涌动 = int(state_dict.get("圣光涌动", 0) or 0)
+    祈福 = int(state_dict.get("祈福", 0) or 0)
     
     愈合祷言_cd = spells.get("愈合祷言", -1)
     静_cd = spells.get("圣言术：静", -1)
@@ -377,10 +377,6 @@ def _priest_holy_logic(state_dict):
     if 施法技能 == 29 or 施法技能 == 33:
         织光层数 += 1
         
-    目标有效 = False
-    if 战斗 and 1 <= 目标类型 <= 3:
-        目标有效 = True
-
     治疗限值 = int(60 + (能量值 * 0.3)) # 90-60
     群疗限值数量 = get_count_units_below_health(state_dict, 治疗限值)
     群疗限值2数量 = get_count_units_below_health(state_dict, 治疗限值 - 10)
@@ -482,7 +478,7 @@ def _priest_holy_logic(state_dict):
                 else:
                     if 目标类型 and 战斗:
                         _combat_filler()
-            elif 目标有效:
+            elif 战斗 and 1 <= 目标类型 <= 3:
                 _combat_filler()
 
         elif 队伍类型 == 46: 
@@ -533,7 +529,7 @@ def _priest_holy_logic(state_dict):
                     current_step = f"施放 快速治疗 on {lowest_u}, 生命最低的单位"
                     action_hotkey = get_hotkey(int(lowest_u), "快速治疗")
                 
-            elif 目标有效:
+            elif 战斗 and 1 <= 目标类型 <= 3:
                 _combat_filler()
 
     return action_hotkey, current_step, unit_info
@@ -541,15 +537,15 @@ def _priest_holy_logic(state_dict):
 # 暗影
 def _priest_shadow_logic(state_dict):
     spells = state_dict.get("spells") or {}
-    战斗 = state_dict.get("战斗")
-    移动 = state_dict.get("移动")
-    施法 = state_dict.get("施法")
-    引导 = state_dict.get("引导")
-    生命值 = state_dict.get("生命值")
-    能量值 = state_dict.get("能量值")
-    一键辅助 = state_dict.get("一键辅助")
-    法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型", 0)
+    战斗 = int(state_dict.get("战斗") or 0)
+    移动 = int(state_dict.get("移动") or 0)
+    施法 = int(state_dict.get("施法") or 0)
+    引导 = int(state_dict.get("引导") or 0)
+    生命值 = int(state_dict.get("生命值") or 0)
+    能量值 = int(state_dict.get("能量值") or 0)
+    一键辅助 = int(state_dict.get("一键辅助") or 0)
+    法术失败 = int(state_dict.get("法术失败", 0) or 0)
+    目标类型 = int(state_dict.get("目标类型", 0) or 0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)

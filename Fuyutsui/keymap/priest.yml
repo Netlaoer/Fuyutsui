@@ -184,7 +184,7 @@
 184: {unit: 0, 技能: "真言术：韧", 热键: "CTRL-SHIFT-NUMPADMULTIPLY"}
 185: {unit: 0, 技能: "神圣新星", 热键: "CTRL-SHIFT-NUMPADDIVIDE"}
 186: {unit: 0, 技能: "苦修", 热键: "CTRL-SHIFT-F1"}
-187: {unit: 0, 技能: "真言术：耀", 热键: "CTRL-SHIFT-F2"}
+187: {unit: 0, 技能: "耀", 热键: "CTRL-SHIFT-F2"}
 188: {unit: 0, 技能: "福音", 热键: "CTRL-SHIFT-F3"}
 189: {unit: 0, 技能: "终极苦修", 热键: "CTRL-SHIFT-F5"}
 190: {unit: 0, 技能: "绝望祷言", 热键: "CTRL-SHIFT-F6"}
@@ -213,3 +213,4 @@
 213: {unit: 0, 技能: "真言术：盾", 热键: "ALT-CTRL-SHIFT-NUMPAD9"}
 214: {unit: 0, 技能: "愈合祷言", 热键: "ALT-CTRL-SHIFT-NUMPAD0"}
 215: {unit: 0, 技能: "圣言术：静", 热键: "ALT-CTRL-SHIFT-NUMPADDECIMAL"}
+216: {unit: 0, 技能: "真言术：耀", 热键: "ALT-CTRL-SHIFT-NUMPADPLUS"}

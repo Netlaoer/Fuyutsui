@@ -1,5 +1,6 @@
 if UnitClassBase("player") ~= "PRIEST" then return end
 local addon, ns = ...
+
 Fuyutsui.ClassBlocks = {
     [1] = {
         [1]  = { type = "block", name = "锚点" },
@@ -159,10 +160,9 @@ Fuyutsui.ClassBlocks = {
     },
 }
 
-
 Fuyutsui.MacrosList = {
     dynamicSpells = { "苦修", "快速治疗", "真言术：盾", "愈合祷言", "纯净术", "圣言术：静" },
-    specialSpells = { [7] = "/castsequence reset=3 真言术：耀,x", },
+    specialSpells = { [36] = "/castsequence reset=3 真言术：耀,x", },
     staticSpells = {
         [1] = "心灵震爆",
         [2] = "惩击",
@@ -170,7 +170,7 @@ Fuyutsui.MacrosList = {
         [4] = "真言术：韧",
         [5] = "神圣新星",
         [6] = "苦修",
-        -- [7] = "真言术：耀",
+        [7] = "真言术：耀",
         [8] = "福音",
         [9] = "终极苦修",
         [10] = "绝望祷言",

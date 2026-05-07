@@ -1006,15 +1006,17 @@ function Fuyutsui:OnUpdateUnitAura()
             if maxAura and maxAura.auraInstanceID then
                 local duration = C_UnitAuras.GetAuraDuration(unit, maxAura.auraInstanceID)
                 if maxAura.expirationTime == 0 then
-                    Fuyutsui:CreatTexture(index, 1)
+                    self:CreatTexture(index, 1)
                 elseif duration then
                     local auraduration = duration:EvaluateRemainingDuration(curve255)
                     ---@diagnostic disable-next-line: param-type-mismatch
                     local _, _, b = auraduration:GetRGB()
-                    Fuyutsui:CreatTexture(index, b)
+                    self:CreatTexture(index, b)
+                else
+                    self:CreatTexture(index, 0)
                 end
             else
-                Fuyutsui:CreatTexture(index, 0)
+                self:CreatTexture(index, 0)
             end
         end
         if blocks.groups.rejuv then
