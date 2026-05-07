@@ -110,7 +110,7 @@ Fuyutsui.ClassBlocks = {
         [27] = { type = "aura", name = "次级食尸鬼", auraName = "次级食尸鬼", showKey = "remaining" },
         [28] = { type = "aura", name = "割魂索命", auraName = "割魂索命", showKey = "remaining" },
         [29] = { type = "aura", name = "末日突降", auraName = "末日突降", showKey = "remaining" },
-        [30] = { type = "aura", name = "末日突降层数", auraName = "末日突降", showKey = "remaining" },
+        [30] = { type = "aura", name = "末日突降层数", auraName = "末日突降", showKey = "count" },
 
         [31] = { type = "aura", name = "黑暗援助", auraName = "黑暗援助", showKey = "remaining" },
         [32] = { type = "aura", name = "禁断知识", auraName = "禁断知识", showKey = "remaining" },
