@@ -163,9 +163,9 @@ def run_druid_logic(state_dict, spec_name):
             elif 生命值 < 60 and 能量值 > 10 and 狂暴回复_cd < 1:
                 current_step = "施放 狂暴回复"
                 action_hotkey = get_hotkey(0, "狂暴回复")
-            elif 碎甲咆哮_cd == 0 and 能量值 > 70:
-                current_step = "施放 碎甲咆哮"
-                action_hotkey = get_hotkey(0, "碎甲咆哮")
+            #elif 碎甲咆哮_cd == 0 and 能量值 > 70:
+            #    current_step = "施放 碎甲咆哮"
+            #    action_hotkey = get_hotkey(0, "碎甲咆哮")
             elif 铁鬃 < 2 and 能量值 > 40 :
                 current_step = "施放 铁鬃"
                 action_hotkey = get_hotkey(0, "铁鬃")
