@@ -1,4 +1,4 @@
-local _, fu = ...
+local addon, ns = ...
 local screenWidth = GetScreenWidth()
 
 local BLOCK_FIX_CONFIG = {
@@ -20,7 +20,6 @@ colorBars:SetSize(screenWidth, BLOCK_FIX_CONFIG.blockHeight)
 colorBars:SetFrameStrata("TOOLTIP") -- 确保在最上层
 colorBars:SetFrameLevel(10000)
 -- colorBars:Raise()   -- Increases the frame's frame level above all other frames in its strata
-fu.MainAnchor = colorBars
 
 -- 存储纹理的数组 (1 到 255)
 local pixelTextures = {}
@@ -39,22 +38,21 @@ local function creatTextureByIndex(i)
 end
 
 -- 更新或创建静态色块 (按索引)
-function fu.updateOrCreatTextureByIndex(i, b)
+function Fuyutsui:CreatTexture(i, b)
     local tex = creatTextureByIndex(i)
     if tex then
         tex:SetColorTexture(0, i / 255, b, 1)
     end
 end
 
-function fu.clearAllTextures()
-    for i = 20, BLOCK_FIX_CONFIG.blockCount do
-        fu.updateOrCreatTextureByIndex(i, 0)
-        -- print("清除色块:", i)
+function Fuyutsui:clearAllTextures()
+    for i = 1, BLOCK_FIX_CONFIG.blockCount do
+        self:CreatTexture(i, 0)
     end
 end
 
 for i = 1, BLOCK_FIX_CONFIG.blockCount do
-    fu.updateOrCreatTextureByIndex(i, 0)
+    Fuyutsui:CreatTexture(i, 0)
 end
 
 local c = 255
@@ -76,14 +74,13 @@ local createdBars = {}
 local spellIdToBar = {} -- 新增：用于根据 spellId 查找已存在的条
 local nextAvailableIndex = 2
 
+local events = { "SPELL_UPDATE_USES", "PLAYER_ENTERING_WORLD" }
 ---@param minValue number 最小值
 ---@param maxValue number 最大值
 ---@param spellId number 法术ID
----@param events table 事件表
-function fu.CreateAutoLayoutBar(minValue, maxValue, spellId, events)
-    -- --- 新增：重复性检查 ---
+function Fuyutsui:CreateAutoLayoutBar(minValue, maxValue, spellId)
+    -- 重复性检查
     if spellIdToBar[spellId] then
-        -- 如果已经存在该 spellId 的条，直接返回，不执行任何操作
         return spellIdToBar[spellId]
     end
 
@@ -123,16 +120,14 @@ function fu.CreateAutoLayoutBar(minValue, maxValue, spellId, events)
         bar:SetValue(val)
     end
 
-    if events and type(events) == "table" then
-        for _, event in ipairs(events) do
-            bar:RegisterEvent(event)
-        end
-        bar:SetScript("OnEvent", Refresh)
+    for _, event in ipairs(events) do
+        bar:RegisterEvent(event)
     end
+    bar:SetScript("OnEvent", Refresh)
+
 
     Refresh()
 
-    -- --- 记录数据 ---
     tinsert(createdBars, bar)
     spellIdToBar[spellId] = bar -- 记录此 spellId 已被创建
 
@@ -140,7 +135,7 @@ function fu.CreateAutoLayoutBar(minValue, maxValue, spellId, events)
 end
 
 --- 清除所有已创建的进度条和背景
-function fu.ClearAllFuyutsuiBars()
+function Fuyutsui:ClearAllFuyutsuiBars()
     -- 1. 释放框架
     for _, bar in ipairs(createdBars) do
         bar:UnregisterAllEvents()

@@ -1,6 +1,6 @@
-local _, fu = ...
+local addon, ns = ...
 
-fu.spellsList = {
+Fuyutsui.spellsList = {
     [384255]  = { index = 151, },              -- 切换天赋
     [200749]  = { index = 152, },              -- 切换专精
     -- 种族
@@ -85,6 +85,8 @@ fu.spellsList = {
     [32379]   = { index = 13, },               -- 暗言术：灭
     [589]     = { index = 14, },               -- 暗言术：痛
     [47540]   = { index = 15, },               -- 苦修
+    [47757]   = { index = 15, },               -- 苦修
+    [47758]   = { index = 15, },               -- 苦修
     [88625]   = { index = 16, },               -- 圣言术：罚
     [14914]   = { index = 17, },               -- 神圣之火
     [132157]  = { index = 18, },               -- 神圣新星
@@ -99,11 +101,12 @@ fu.spellsList = {
     [391403]  = { index = 27, },               -- 精神鞭笞：狂
     [120644]  = { index = 28, },               -- 光晕
     [2061]    = { index = 29, },               -- 快速治疗
-    [194509]  = { index = 30, },               -- 真言术：耀
+    [194509]  = { index = 30, failed = true }, -- 真言术：耀
     [64863]   = { index = 31, },               -- 神圣赞美诗
     [596]     = { index = 32, },               -- 治疗祷言
     [1262763] = { index = 33, },               -- 祈福
     [186263]  = { index = 34, },               -- 暗影愈合
+    [472433]  = { index = 35, failed = true }, -- 福音
     -- 德鲁伊
     [132469]  = { index = 1, failed = true },  -- 台风
     [99]      = { index = 2, failed = true },  -- 夺魂咆哮
@@ -156,6 +159,23 @@ fu.spellsList = {
     [274837]  = { index = 49, },               -- 野性狂乱
     [106785]  = { index = 50, },               -- 横扫
     [441591]  = { index = 51, },               -- 毁灭
+    [1253799] = { index = 52, },               -- 碎甲咆哮
+    [6807]    = { index = 53, },               -- 重殴
+    [1261867] = { index = 54, },               -- 野性之心
+    [93985]   = { index = 55, },               -- 迎头痛击
+    [314330]  = { index = 56, },               -- 迎头痛击
+    [192081]  = { index = 57, },               -- 铁鬃
+    [1270292] = { index = 58, },               -- 明月普照
+    [22812]   = { index = 59, },               -- 树皮术
+    [2908]    = { index = 60, },               -- 安抚
+    [1850]    = { index = 61, },               -- 急奔
+    [339]     = { index = 62, },               -- 纠缠根须
+    [2782]    = { index = 63, },               -- 清除腐蚀
+    [6795]    = { index = 64, },               -- 低吼
+    [77761]   = { index = 65, },               -- 狂奔怒吼
+    [783]     = { index = 66, },               -- 旅行形态
+    [102558]  = { index = 67, },               -- 化身：乌索克的守护者
+    [77764]   = { index = 68, },               -- 狂奔怒吼
     -- 法师
     [45438]   = { index = 1, },                -- 寒冰屏障
     [475]     = { index = 2, },                -- 解除诅咒
@@ -584,7 +604,7 @@ fu.spellsList = {
     [441776]  = { index = 60, },               -- 致命一击
 }
 
-fu.e = {
+Fuyutsui.e = {
     ["法术冷却"] = "SPELL_UPDATE_COOLDOWN", -- 冷却事件
     ["施法成功"] = "UNIT_SPELLCAST_SUCCEEDED", -- 成功事件
     ["图标改变"] = "SPELL_UPDATE_ICON", -- ICON事件
@@ -595,19 +615,69 @@ fu.e = {
     ["屏幕提示隐藏"] = "SPELL_ACTIVATION_OVERLAY_HIDE", -- 屏幕提示隐藏
 }
 -- 英雄天赋
-fu.heroTalent = {
+Fuyutsui.heroTalents = {
+    -- 战士
+    [436358] = 1,  -- 巨神兵
+    [444767] = 2,  -- 屠戮者
+    [434969] = 3,  -- 山丘领主
+    -- 圣骑士
+    [431377] = 1,  -- 烈日先驱
+    [432459] = 2,  -- 铸光者
+    [427445] = 3,  -- 圣殿骑士
+    -- 猎人
+    [466930] = 1,  -- 黑暗游侠
+    [466932] = 1,  -- 黑暗游侠
+    [471876] = 2,  -- 猎群领袖
+    [1253599] = 3, -- 哨兵
+    -- 盗贼
+    [457052] = 1,  -- 死亡猎手
+    [452536] = 2,  -- 命缚者
+    [441146] = 3,  -- 欺诈者
+    -- 牧师
+    [1248423] = 1, -- 神谕者
+    [263165] = 2,  -- 虚空编织者
+    [447444] = 2,  -- 虚空编织者
+    [120517] = 3,  -- 执政官
+    [102644] = 3,  -- 执政官
+    -- 死亡骑士
+    [439843] = 1,  -- 死亡使者
+    [433901] = 2,  -- 萨莱因
+    [444005] = 3,  -- 天启骑士
+    -- 萨满祭司
+    [443450] = 1,  -- 先知
+    [454009] = 2,  -- 风暴使者
+    [444995] = 3,  -- 图腾祭祀
+    -- 法师
+    [443739] = 1,  -- 疾咒师
+    [448601] = 2,  -- 日怒
+    [431044] = 3,  -- 霜火
     -- 术士
-    [445486] = 1, -- 地狱召唤者
-    [449614] = 2, -- 灵魂收割者
-    [428514] = 3, -- 恶魔使徒
+    [445486] = 1,  -- 地狱召唤者
+    [449614] = 2,  -- 灵魂收割者
+    [428514] = 3,  -- 恶魔使徒
     -- 武僧
-    [450508] = 1, -- 祥和宗师
-    [450615] = 2, -- 影踪派
-    [443028] = 3, -- 天神御师
-    [123904] = 3, -- 天神御师
+    [450508] = 1,  -- 祥和宗师
+    [450615] = 2,  -- 影踪派
+    [443028] = 3,  -- 天神御师
+    [123904] = 3,  -- 天神御师
+    -- 德鲁伊
+    [424058] = 1,  -- 艾露恩钦选者
+    [433831] = 2,  -- 丛林守护者
+    [441583] = 3,  -- 利爪德鲁伊
+    [439528] = 4,  -- 荒野追猎者
+    -- 恶魔猎手
+    [442290] = 1,  -- 奥达奇收割者
+    [452402] = 2,  -- 邪痕枭雄
+    [1253304] = 3, -- 歼灭者
+    -- 唤魔师
+    [1264269] = 1, -- 塑焰者
+    [436335] = 2,  -- 鳞长
+    [438587] = 2,  -- 鳞长
+    [431442] = 2,  -- 时空守卫
 }
+
 -- 难度文本
-fu.difficutlyToText = {
+Fuyutsui.difficutlyToText = {
     [1] = "5人本普通", -- Normal (Dungeon)
     [2] = "5人本英雄", -- Heroic (Dungeon)
     [14] = "团本普通", -- Normal (Raid)
@@ -617,7 +687,7 @@ fu.difficutlyToText = {
     [23] = "5人本史诗", -- Mythic (Dungeon)
 }
 -- 首领ID
-fu.bossID = {
+Fuyutsui.bossID = {
     [0] = 0,     -- 未战斗
     -- 团本
     [3176] = 1,  -- 元首阿福扎恩
@@ -673,7 +743,7 @@ fu.bossID = {
     [1701] = 79, -- 高阶贤者维里克斯
 }
 -- 能量类型
-fu.EnumPowerType = {
+Fuyutsui.EnumPowerType = {
     ["MANA"] = 0,
     ["RAGE"] = 1,
     ["FOCUS"] = 2,
@@ -696,7 +766,7 @@ fu.EnumPowerType = {
     ["SHADOW_ORBS"] = 28,
 }
 -- 专精范围
-fu.rangeSpecID = {
+Fuyutsui.rangeSpecID = {
     -- Death Knight
     [250] = 15,  -- 鲜血
     [251] = 15,  -- 冰霜
@@ -735,8 +805,8 @@ fu.rangeSpecID = {
     [1450] = 10, -- Initial
     -- Paladin
     [65] = 30,   -- 神圣
-    [66] = 15,   -- 防护
-    [70] = 10,   -- 惩戒
+    [66] = 25,   -- 防护
+    [70] = 25,   -- 惩戒
     [1451] = 25, -- Initial
     -- Priest
     [256] = 46,  -- 戒律
@@ -765,7 +835,7 @@ fu.rangeSpecID = {
     [1446] = 15, -- Initial
 }
 -- 无秘密值光环
-fu.noSecretAuras = {
+Fuyutsui.noSecretAuras = {
     -- 恩护 唤魔师
     [355941] = true,  -- Dream Breath
     [363502] = true,  -- Dream Flight
@@ -811,7 +881,7 @@ fu.noSecretAuras = {
     [1244893] = true, -- Beacon of the Savior, 救世道标
 }
 -- 动作条
-fu.actionBars = {
+Fuyutsui.actionBars = {
     { startSlot = 1,   endSlot = 12,  bindingPrefix = "ACTIONBUTTON" },
     { startSlot = 13,  endSlot = 24,  bindingPrefix = "ACTIONBUTTON" },
     { startSlot = 25,  endSlot = 36,  bindingPrefix = "MULTIACTIONBAR3BUTTON" },
@@ -828,7 +898,7 @@ fu.actionBars = {
     { startSlot = 169, endSlot = 180, bindingPrefix = "MULTIACTIONBAR7BUTTON" }
 }
 -- 按键映射
-fu.keymap = {
+Fuyutsui.keymap = {
     ["1"] = 49,
     ["2"] = 50,
     ["3"] = 51,
@@ -930,51 +1000,9 @@ fu.keymap = {
     ["/"] = 191,
 }
 -- 角色类型映射
-fu.roleMap = {
+Fuyutsui.roleMap = {
     ["TANK"] = 1,
     ["HEALER"] = 2,
     ["DAMAGER"] = 3,
     ["NONE"] = 0,
 }
-
-function SetTestSecret(set)
-    SetCVar("secretChallengeModeRestrictionsForced", set)
-    SetCVar("secretCombatRestrictionsForced", set)
-    SetCVar("secretEncounterRestrictionsForced", set)
-    SetCVar("secretMapRestrictionsForced", set)
-    SetCVar("secretPvPMatchRestrictionsForced", set)
-    SetCVar("secretAuraDataRestrictionsForced", set)
-    SetCVar("scriptErrors", set);
-    SetCVar("doNotFlashLowHealthWarning", set);
-end
-
--- /script SetTestSecret(0)
-SetTestSecret(1)
-
--- 遍历队伍成员, 来自WeakAuras的代码
----@param reversed boolean 是否逆序
----@param forceParty boolean 是否强制使用队伍
----@return function 迭代器
-function fu.IterateGroupMembers(reversed, forceParty)
-    local unit = (not forceParty and IsInRaid()) and 'raid' or 'party'
-    local numGroupMembers = unit == 'party' and GetNumSubgroupMembers() or GetNumGroupMembers()
-    local i = reversed and numGroupMembers or (unit == 'party' and 0 or 1)
-    return function()
-        local ret
-        if i == 0 and unit == 'party' then
-            ret = 'player'
-        elseif i <= numGroupMembers and i > 0 then
-            ret = unit .. i
-        end
-        i = i + (reversed and -1 or 1)
-        return ret
-    end
-end
-
-function fu.creatColorCurve(point, b)
-    local curve = C_CurveUtil.CreateColorCurve()
-    curve:SetType(Enum.LuaCurveType.Linear)
-    curve:AddPoint(0, CreateColor(0, 0, 0, 1))
-    curve:AddPoint(point, CreateColor(0, 0, b / 255, 1))
-    return curve
-end

@@ -1,7 +1,28 @@
-local addon, fu = ...
-local classId, e = fu.classId, fu.e
+local addon, ns = ...
+local classFilename, classId = UnitClassBase("player")
+local e = Fuyutsui.e
 local addAuras, updateAuras, removeAuras = {}, {}, {} -- 添加、更新、移除光环
-local creat = fu.updateOrCreatTextureByIndex
+
+--[[
+    auras.lua — 逻辑光环状态机（按职业）
+    如何在本文件里新增一条光环
+    1. 在 `auras[职业ID]` 下增加键名（中文名），与职业 Lua 里 `Fuyutsui.blocks.auras` 引用的名称一致。
+    2. 常用字段：
+       - remaining / duration / expirationTime：倒计时；有 duration 时事件会刷新 expirationTime。
+       - count, countMin, countMax：层数；配合映射表里的 step（正加负减）在「法术冷却」或「施法成功」等路径更新。
+       - addAuras / updateAuras / removeAuras：三张「法术 ID -> { event = e["…"], … }」表；
+
+       event 必须是`e` 的键之一:
+       「法术冷却」
+       「施法成功」
+       「图标改变」
+       「法术覆盖」
+       「屏幕提示显示/隐藏」
+       「图标发光隐藏」
+       - 可选：step、castBar（施法成功时是否要求有读条）、overrideSpellID、单条上的 duration 覆盖、isIcon 等；
+         若多条逻辑共用显示名可用 name + spellId 指向另一条（见文件中武僧等示例）。
+
+]]
 
 -- 光环列表
 local auras = {
@@ -117,7 +138,7 @@ local auras = {
             duration = 15,
             expirationTime = nil,
             addAuras = {
-                [188370] = { event = e["法术冷却"] },
+                [31884] = { event = e["法术冷却"] },
             },
             updateAuras = nil,
             removeAuras = nil,
@@ -147,7 +168,7 @@ local auras = {
             remaining = 0,
             duration = 0,
             expirationTime = nil,
-            isIcon = 1,
+            isIcon = 0,
             addAuras = {
                 [432459] = {
                     event = e["图标改变"],
@@ -278,6 +299,22 @@ local auras = {
                     event = e["图标改变"],
                     overrideSpellID = 1262763
                 },
+            },
+        },
+        ["祸福相依"] = {
+            remaining = 0,
+            duration = 20,
+            count = 0,
+            countMin = 0,
+            countMax = 10,
+            expirationTime = nil,
+            addAuras = {
+                [390787] = { event = e["法术冷却"], step = 1 },
+            },
+            updateAuras = nil,
+            removeAuras = {
+                [17] = { event = e["施法成功"] },
+                [1253593] = { event = e["施法成功"] }
             },
         },
     },
@@ -518,29 +555,14 @@ local auras = {
         },
         ["冰川尖刺！"] = {
             remaining = 0,
-            duration = 0,
+            duration = 60,
             expirationTime = nil,
-            isIcon = 1,
             addAuras = {
-                [116] = { -- 寒冰箭
-                    event = e["图标改变"],
-                    overrideSpellID = 199786,
-                },
-                [431044] = { -- 霜火箭
-                    event = e["图标改变"],
-                    overrideSpellID = 199786,
-                },
+                [199786] = { event = e["法术冷却"] },
             },
             updateAuras = nil,
             removeAuras = {
-                [116] = { -- 寒冰箭
-                    event = e["图标改变"],
-                    overrideSpellID = 199786,
-                },
-                [431044] = { -- 霜火箭
-                    event = e["图标改变"],
-                    overrideSpellID = 199786,
-                },
+                [199786] = { event = e["施法成功"] }, -- 冰枪术
             },
         },
     },
@@ -683,6 +705,30 @@ local auras = {
     },
     -- 德鲁伊
     [11] = {
+        ["星河守护者"] = {
+            remaining = 0,
+            duration = 15,
+            expirationTime = nil,
+            addAuras = {
+                [213708] = { event = e["法术冷却"] },
+            },
+            updateAuras = nil,
+            removeAuras = {
+                [8921] = { event = e["施法成功"] },
+            },
+        },
+        ["淤血"] = {
+            remaining = 0,
+            duration = 10,
+            expirationTime = nil,
+            addAuras = {
+                [93622] = { event = e["法术冷却"] },
+            },
+            updateAuras = nil,
+            removeAuras = {
+                [33917] = { event = e["施法成功"] },
+            },
+        },
         ["塞纳留斯的梦境"] = {
             remaining = 0,
             duration = 10,
@@ -757,9 +803,9 @@ local auras = {
     },
 }
 
-fu.Auras = {}
+Fuyutsui.Auras = {}
 do
-    fu.Auras = auras[classId] or {}
+    Fuyutsui.Auras = auras[classId] or {}
     local function indexAura(target, auraName, auraData)
         for spellId, info in pairs(auraData) do
             local ev = info.event
@@ -777,7 +823,7 @@ do
         end
     end
 
-    for name, data in pairs(fu.Auras) do
+    for name, data in pairs(Fuyutsui.Auras) do
         if data.addAuras then
             indexAura(addAuras, name, data.addAuras)
         end
@@ -798,7 +844,7 @@ local function applyAuraMapForSpellEvent(auraMap, castBarID)
     end
     local now = GetTime()
     for auraName, info in pairs(auraMap) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura and ((not info.castBar) or castBarID) then
             if aura.duration then
                 aura.expirationTime = now + aura.duration
@@ -823,7 +869,7 @@ local function updateAuraMapForSpellEvent(auraMap, castBarID)
     end
     local now = GetTime()
     for auraName, info in pairs(auraMap) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura and ((not info.castBar) or castBarID) then
             if aura.count and info.step then
                 if info.step > 0 then
@@ -846,7 +892,7 @@ local function clearAurasFromRemoveMap(removeMap, resetCount)
         return
     end
     for auraName in pairs(removeMap) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura then
             if resetCount and aura.count then
                 aura.count = aura.countMin
@@ -858,7 +904,7 @@ end
 
 ---@param spellID number 法术 ID（冷却事件键）
 -- 通过 SPELL_UPDATE_COOLDOWN 同步光环结束时间与层数
-local function updateAuraBySpellCooldown(spellID)
+function Fuyutsui:updateAuraBySpellCooldown(spellID)
     local ev = e["法术冷却"]
     local addBySpell = addAuras[ev]
     local updateBySpell = updateAuras[ev]
@@ -871,7 +917,7 @@ end
 ---@param spellID number 法术ID
 ---@param castBarID number 施法条ID
 -- 通过事件"UNIT_SPELLCAST_SUCCEEDED"更新光环, 并更新光环的层数
-local function updateAuraBySuccess(spellID, castBarID)
+function Fuyutsui:updateAuraBySuccess(spellID, castBarID)
     local ev = e["施法成功"]
     local addBySpell = addAuras[ev]
     local updateBySpell = updateAuras[ev]
@@ -888,7 +934,7 @@ local function updateAuraByIconMap(map, spellID)
     local hasOverride = false
     local overrideSpellID = C_Spell.GetOverrideSpell(spellID)
     for auraName, info in pairs(map) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if overrideSpellID and info.overrideSpellID and overrideSpellID == info.overrideSpellID then
             hasOverride = true
         end
@@ -911,7 +957,7 @@ end
 
 ---@param spellID number 法术ID
 -- 通过事件"SPELL_UPDATE_ICON"更新光环, 并更新光环的层数
-local function updateAuraByIcon(spellID)
+function Fuyutsui:updateAuraByIcon(spellID)
     local ev = e["图标改变"]
     local addBySpell = addAuras[ev]
     local updateBySpell = updateAuras[ev]
@@ -927,13 +973,36 @@ local function updateAuraByIcon(spellID)
     end
 end
 
+-- 首次登录遍历所有Icon光环
+function Fuyutsui:updateAuraIconByEnteringWorld()
+    local ev = e["图标改变"]
+    local addBySpell = addAuras[ev]
+    local updateBySpell = updateAuras[ev]
+    local removeBySpell = removeAuras[ev]
+    if addBySpell then
+        for spellId, info in pairs(addBySpell) do
+            updateAuraByIconMap(addBySpell[spellId], spellId)
+        end
+    end
+    if updateBySpell then
+        for spellId, info in pairs(updateBySpell) do
+            updateAuraByIconMap(updateBySpell[spellId], spellId)
+        end
+    end
+    if removeBySpell then
+        for spellId, info in pairs(removeBySpell) do
+            updateAuraByIconMap(removeBySpell[spellId], spellId)
+        end
+    end
+end
+
 local function updateAuraByOverrideMap(map, overrideSpellID)
     if not map then
         return
     end
 
     for auraName, info in pairs(map) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura then
             if overrideSpellID and aura.duration and overrideSpellID == info.overrideSpellID then
                 if aura.duration then
@@ -949,7 +1018,7 @@ end
 ---@param baseSpellID number 基本法术ID
 ---@param overrideSpellID number 覆盖法术ID
 -- 通过事件"COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED"更新光环, 并更新光环的结束时间
-local function updateAuraBySpellOverride(baseSpellID, overrideSpellID)
+function Fuyutsui:updateAuraBySpellOverride(baseSpellID, overrideSpellID)
     local ev = e["法术覆盖"]
     local addBySpell = addAuras[ev]
     local updateBySpell = updateAuras[ev]
@@ -967,7 +1036,7 @@ end
 
 ---@param spellId number 光环ID, 屏幕提示
 -- 通过事件"SPELL_ACTIVATION_OVERLAY_HIDE"更新光环, 并更新光环的结束时间
-local function updateAuraByActivationOverlayShow(spellId)
+function Fuyutsui:updateAuraByActivationOverlayShow(spellId)
     local addBySpell = addAuras[e["屏幕提示显示"]]
     local updateBySpell = updateAuras[e["屏幕提示显示"]]
     applyAuraMapForSpellEvent(addBySpell and addBySpell[spellId], nil)
@@ -976,13 +1045,13 @@ end
 
 ---@param spellId number 光环ID, 屏幕提示
 -- 通过事件"SPELL_ACTIVATION_OVERLAY_HIDE"更新光环, 并更新光环的结束时间
-local function updateAuraByActivationOverlayHide(spellId)
+function Fuyutsui:updateAuraByActivationOverlayHide(spellId)
     local removeBySpell = removeAuras[e["屏幕提示隐藏"]]
     clearAurasFromRemoveMap(removeBySpell and removeBySpell[spellId], false)
 end
 
 -- SPELL_ACTIVATION_OVERLAY_GLOW_SHOW / HIDE：与 main.lua 一致，按是否仍发光刷新或清除时间
-local function updateAuraByOverlayGlow(spellID)
+function Fuyutsui:updateAuraByOverlayGlow(spellID)
     local ev = e["图标发光隐藏"]
     local removeBySpell = removeAuras[ev]
     local map = removeBySpell and removeBySpell[spellID]
@@ -992,7 +1061,7 @@ local function updateAuraByOverlayGlow(spellID)
     local now = GetTime()
     local isSpellOverlayed = C_SpellActivationOverlay.IsSpellOverlayed(spellID)
     for auraName in pairs(map) do
-        local aura = fu.Auras[auraName]
+        local aura = Fuyutsui.Auras[auraName]
         if aura then
             if isSpellOverlayed and aura.duration then
                 aura.expirationTime = now + aura.duration
@@ -1004,9 +1073,9 @@ local function updateAuraByOverlayGlow(spellID)
 end
 
 -- 通过每帧更新光环
-local function updateAura()
+function Fuyutsui:updateAura()
     local currentTime = GetTime()
-    for name, info in pairs(fu.Auras) do
+    for name, info in pairs(Fuyutsui.Auras) do
         local expTime = info.expirationTime
         if expTime then
             if info.count and info.count <= 0 then
@@ -1033,69 +1102,25 @@ local function updateAura()
     end
 end
 
-local function updateAuraBlocks()
-    if not fu.blocks or not fu.blocks.auras then return end
-    for name, info in pairs(fu.blocks.auras) do
-        local v = info.show
-        if info.auraRef and info.showKey then
-            v = info.auraRef[info.showKey]
-        end
-        if v then
-            creat(info.index, v / 255)
+function Fuyutsui:updateAuraBlocks()
+    if not self.blocks or not self.blocks.auras then
+        return
+    end
+    for k, info in pairs(self.blocks.auras) do
+        if info.auraName and info.showKey then
+            local aura = Fuyutsui.Auras and Fuyutsui.Auras[info.auraName]
+            if not aura then
+                self:CreatTexture(k, 0)
+            else
+                local v = aura[info.showKey]
+                if v then
+                    self:CreatTexture(k, v / 255)
+                else
+                    self:CreatTexture(k, 0)
+                end
+            end
         else
-            creat(info.index, 0)
+            self:CreatTexture(k, 0)
         end
     end
 end
-
-local frame = CreateFrame("Frame")
-frame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
-
-for _, v in pairs(e) do
-    frame:RegisterEvent(v)
-end
-
-function frame:SPELL_UPDATE_COOLDOWN(spellID)
-    if issecretvalue(spellID) then return end
-    updateAuraBySpellCooldown(spellID)
-end
-
-function frame:UNIT_SPELLCAST_SUCCEEDED(unit, castGUID, spellID, castBarID)
-    if issecretvalue(spellID) or unit ~= "player" then return end
-    updateAuraBySuccess(spellID, castBarID)
-end
-
-function frame:SPELL_UPDATE_ICON(spellId)
-    if issecretvalue(spellId) then return end
-    updateAuraByIcon(spellId)
-end
-
-function frame:COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED(baseSpellID, overrideSpellID)
-    updateAuraBySpellOverride(baseSpellID, overrideSpellID)
-end
-
-function frame:SPELL_ACTIVATION_OVERLAY_GLOW_SHOW(spellId)
-    updateAuraByOverlayGlow(spellId)
-end
-
-function frame:SPELL_ACTIVATION_OVERLAY_GLOW_HIDE(spellId)
-    updateAuraByOverlayGlow(spellId)
-end
-
-function frame:SPELL_ACTIVATION_OVERLAY_SHOW(spellId)
-    updateAuraByActivationOverlayShow(spellId)
-end
-
-function frame:SPELL_ACTIVATION_OVERLAY_HIDE(spellId)
-    updateAuraByActivationOverlayHide(spellId)
-end
-
-local timeElapsed = 0
-frame:SetScript("OnUpdate", function(_, elapsed)
-    timeElapsed = timeElapsed + elapsed
-    if timeElapsed > 0.2 then
-        updateAura()
-        updateAuraBlocks()
-        timeElapsed = 0
-    end
-end)

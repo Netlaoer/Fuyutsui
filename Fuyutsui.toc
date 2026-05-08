@@ -1,11 +1,12 @@
 ## Interface: 120000, 120001, 120005
 
 ## Title: Fuyutsui
-## Version: 0.0.3
+## Version: 0.0.8
 ## Author: Wayne Bian
-## X-Flavor: Retail
+## IconTexture: Interface\AddOns\Fuyutsui\core\Spell_Misc_EmotionHappy.blp
+## OptionalDeps: LibRangeCheck-3.0, Ace3
 ## SavedVariables: FuyutsuiADB
-## SavedVariablesPerCharacter: FuyutsuiDB
+## X-Embeds: Ace3
 
 ## Category-enUS: Combat
 ## Category-deDE: Kampf
@@ -23,14 +24,17 @@
 
 ## X-Category: Combat
 
-libs/LibStub/LibStub.lua
-libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua
+embeds.xml
+Libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua
+
 core/core.lua
+core/quickbutton.lua
 core/config.lua
 core/block.lua
 core/macro.lua
 core/keybinds.lua
 core/auras.lua
+
 class/Warrior.lua
 class/Paladin.lua
 class/Rogue.lua
@@ -44,4 +48,6 @@ class/Monk.lua
 class/Druid.lua
 class/DemonHunter.lua
 class/Evoker.lua
+
 main.lua
+gui.lua

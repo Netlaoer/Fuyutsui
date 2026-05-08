@@ -1,198 +1,189 @@
-local _, fu = ...
-if fu.classId ~= 2 then return end
+if UnitClassBase("player") ~= "PALADIN" then return end
+local addon, ns = ...
+Fuyutsui.ClassBlocks = {
+    [1] = {
+        [1] = { type = "block", name = "锚点" },
+        [2] = { type = "block", name = "职业" },
+        [3] = { type = "block", name = "专精" },
+        [4] = { type = "block", name = "有效性" },
+        [5] = { type = "block", name = "战斗" },
+        [6] = { type = "block", name = "移动" },
+        [7] = { type = "block", name = "施法" },
+        [8] = { type = "block", name = "引导" },
+        [9] = { type = "block", name = "蓄力" },
+        [10] = { type = "block", name = "蓄力层数" },
+        [11] = { type = "block", name = "生命值" },
+        [12] = { type = "block", name = "能量值" },
+        [13] = { type = "block", name = "一键辅助" },
+        [14] = { type = "block", name = "法术失败" },
+        [15] = { type = "block", name = "目标类型" },
+        [16] = { type = "block", name = "队伍类型" },
+        [17] = { type = "block", name = "队伍人数" },
+        [18] = { type = "block", name = "首领战" },
+        [19] = { type = "block", name = "难度" },
+        [20] = { type = "block", name = "英雄天赋" },
 
-fu.spellCooldown = {
-    [115750] = { index = 31, name = "盲目之光" },
-    [853] = { index = 32, name = "制裁之锤" },
-    [642] = { index = 33, name = "圣盾术" },
-    [6940] = { index = 34, name = "牺牲祝福" },
-    [1044] = { index = 35, name = "自由祝福" },
-    [1022] = { index = 36, name = "保护祝福" },
-    [633] = { index = 37, name = "圣疗术" }
-}
+        [21] = { type = "block", name = "神圣能量" },
+        [22] = { type = "block", name = "施法技能" },
+        [23] = { type = "block", name = "施法目标" },
+        [24] = { type = "block", name = "目标距离" },
 
-function fu.updateSpecInfo()
-    local specIndex = C_SpecializationInfo.GetSpecialization()
-    fu.powerType = nil
-    fu.blocks = nil
-    fu.group_blocks = nil
-    fu.assistant_spells = nil
-    if specIndex == 1 then
-        fu.powerType = "MANA"
-        fu.blocks = {
-            ["神圣能量"] = 21,
-            ["施法技能"] = 22,
-            ["施法目标"] = 23,
-            ["目标距离"] = 24,
-            auras = {
-                ["神圣意志"] = {
-                    index = 25,
-                    auraRef = fu.Auras["神圣意志"],
-                    showKey = "remaining",
-                },
-                ["圣光灌注"] = {
-                    index = 26,
-                    auraRef = fu.Auras["圣光灌注"],
-                    showKey = "remaining",
-                },
-                ["灌注层数"] = {
-                    index = 27,
-                    auraRef = fu.Auras["灌注层数"],
-                    showKey = "count",
-                },
-                ["神性层数"] = {
-                    index = 28,
-                    auraRef = fu.Auras["神性之手"],
-                    showKey = "count",
-                },
-            },
-        }
+        [25] = { type = "aura", name = "神圣意志", auraName = "神圣意志", showKey = "remaining" },
+        [26] = { type = "aura", name = "圣光灌注", auraName = "圣光灌注", showKey = "remaining" },
+        [27] = { type = "aura", name = "灌注层数", auraName = "圣光灌注", showKey = "count" },
+        [28] = { type = "aura", name = "神性层数", auraName = "神性之手", showKey = "count" },
 
-        fu.spellCooldown[20473] = { index = 38, name = "神圣震击", charge = 39 }
-        fu.spellCooldown[4987] = { index = 40, name = "清洁术" }
-        fu.spellCooldown[275773] = { index = 41, name = "审判" }
-        fu.spellCooldown[375576] = { index = 42, name = "圣洁鸣钟" }
-        fu.spellCooldown[114165] = { index = 43, name = "神圣棱镜" }
-        fu.spellCooldown[31821] = { index = 44, name = "光环掌握" }
-        fu.spellCooldown[200025] = { index = 45, name = "美德道标" }
-
-        fu.group_blocks = {
-            unit_start = 70,
-            block_num = 6,
+        [31] = { type = "spell", spellId = 115750, name = "盲目之光" },
+        [32] = { type = "spell", spellId = 853, name = "制裁之锤" },
+        [33] = { type = "spell", spellId = 642, name = "圣盾术" },
+        [34] = { type = "spell", spellId = 6940, name = "牺牲祝福" },
+        [35] = { type = "spell", spellId = 1044, name = "自由祝福" },
+        [36] = { type = "spell", spellId = 1022, name = "保护祝福" },
+        [37] = { type = "spell", spellId = 633, name = "圣疗术" },
+        [38] = { type = "spell", spellId = 20473, name = "神圣震击" },
+        [39] = { type = "spell", spellId = 20473, name = "神圣震击", charge = true, },
+        [40] = { type = "spell", spellId = 4987, name = "清洁术" },
+        [41] = { type = "spell", spellId = 275773, name = "审判" },
+        [42] = { type = "spell", spellId = 375576, name = "圣洁鸣钟" },
+        [43] = { type = "spell", spellId = 114165, name = "神圣棱镜" },
+        [44] = { type = "spell", spellId = 31821, name = "光环掌握" },
+        [45] = { type = "spell", spellId = 200025, name = "美德道标" },
+        [70] = {
+            type = "group",
+            num = 6,
             healthPercent = 1,
             role = 2,
             dispel = 3,
-            aura = {
+            auras = {
                 [4] = { 156322 },        -- 永恒之火, 156322
                 [5] = { 1244893 },       -- 救世道标, 1244893
                 [6] = { 53563, 156910 }, -- 圣光道标, 信仰道标, 53563, 156910
             },
-        }
-    elseif specIndex == 2 then
-        fu.HarmfulSpellId = 275779
-        fu.powerType = "MANA"
-        fu.blocks = {
-            ["神圣能量"] = 21,
-            auras = {
-                ["神圣意志"] = {
-                    index = 22,
-                    auraRef = fu.Auras["神圣意志"],
-                    showKey = "remaining",
-                },
-                ["神圣壁垒"] = {
-                    index = 23,
-                    auraRef = fu.Auras["神圣壁垒"],
-                    showKey = "remaining",
-                },
-                ["圣洁武器"] = {
-                    index = 24,
-                    auraRef = fu.Auras["圣洁武器"],
-                    showKey = "remaining",
-                },
-                ["闪耀之光"] = {
-                    index = 25,
-                    auraRef = fu.Auras["闪耀之光"],
-                    showKey = "remaining",
-                },
-                ["闪光层数"] = {
-                    index = 26,
-                    auraRef = fu.Auras["闪耀之光"],
-                    showKey = "count",
-                },
-                ["神圣军备"] = {
-                    index = 27,
-                    auraRef = fu.Auras["神圣军备"],
-                    showKey = "isIcon",
-                },
-                ["奉献"] = {
-                    index = 28,
-                    auraRef = fu.Auras["奉献"],
-                    showKey = "remaining",
-                },
-                ["复仇之怒"] = {
-                    index = 29,
-                    auraRef = fu.Auras["复仇之怒"],
-                    showKey = "remaining",
-                },
-                ["圣光之锤"] = {
-                    index = 30,
-                    auraRef = fu.Auras["圣光之锤"],
-                    showKey = "remaining",
-                },
-            },
-        }
+        },
+    },
+    [2] = {
+        [1] = { type = "block", name = "锚点" },
+        [2] = { type = "block", name = "职业" },
+        [3] = { type = "block", name = "专精" },
+        [4] = { type = "block", name = "有效性" },
+        [5] = { type = "block", name = "战斗" },
+        [6] = { type = "block", name = "移动" },
+        [7] = { type = "block", name = "施法" },
+        [8] = { type = "block", name = "引导" },
+        [9] = { type = "block", name = "蓄力" },
+        [10] = { type = "block", name = "蓄力层数" },
+        [11] = { type = "block", name = "生命值" },
+        [12] = { type = "block", name = "能量值" },
+        [13] = { type = "block", name = "一键辅助" },
+        [14] = { type = "block", name = "法术失败" },
+        [15] = { type = "block", name = "目标类型" },
+        [16] = { type = "block", name = "队伍类型" },
+        [17] = { type = "block", name = "队伍人数" },
+        [18] = { type = "block", name = "首领战" },
+        [19] = { type = "block", name = "难度" },
+        [20] = { type = "block", name = "英雄天赋" },
 
-        fu.spellCooldown[432459] = { index = 38, name = "神圣壁垒", charge = 39 }
-        fu.spellCooldown[213644] = { index = 40, name = "清毒术" }
-        fu.spellCooldown[275779] = { index = 41, name = "审判" }
-        fu.spellCooldown[375576] = { index = 42, name = "圣洁鸣钟" }
-        fu.spellCooldown[31935] = { index = 43, name = "复仇者之盾" }
-        fu.spellCooldown[26573] = { index = 44, name = "奉献" }
-        fu.spellCooldown[53600] = { index = 45, name = "正义盾击" }
-        fu.spellCooldown[204019] = { index = 46, name = "祝福之锤" }
+        [21] = { type = "block", name = "神圣能量" },
 
-        fu.group_blocks = {
-            unit_start = 70,
-            block_num = 3,
+        [22] = { type = "aura", name = "神圣意志", auraName = "神圣意志", showKey = "remaining" },
+        [23] = { type = "aura", name = "神圣壁垒", auraName = "神圣壁垒", showKey = "remaining" },
+        [24] = { type = "aura", name = "圣洁武器", auraName = "圣洁武器", showKey = "remaining" },
+        [25] = { type = "aura", name = "闪耀之光", auraName = "闪耀之光", showKey = "remaining" },
+        [26] = { type = "aura", name = "闪光层数", auraName = "闪耀之光", showKey = "count" },
+        [27] = { type = "aura", name = "神圣军备", auraName = "神圣军备", showKey = "isIcon" },
+        [28] = { type = "aura", name = "奉献", auraName = "奉献", showKey = "remaining" },
+        [29] = { type = "aura", name = "复仇之怒", auraName = "复仇之怒", showKey = "remaining" },
+        [30] = { type = "aura", name = "圣光之锤", auraName = "圣光之锤", showKey = "remaining" },
+
+        [31] = { type = "spell", spellId = 115750, name = "盲目之光" },
+        [32] = { type = "spell", spellId = 853, name = "制裁之锤" },
+        [33] = { type = "spell", spellId = 642, name = "圣盾术" },
+        [34] = { type = "spell", spellId = 6940, name = "牺牲祝福" },
+        [35] = { type = "spell", spellId = 1044, name = "自由祝福" },
+        [36] = { type = "spell", spellId = 1022, name = "保护祝福" },
+        [37] = { type = "spell", spellId = 633, name = "圣疗术" },
+        [38] = { type = "spell", spellId = 432459, name = "神圣壁垒" },
+        [39] = { type = "spell", spellId = 432459, name = "神圣壁垒", charge = true, },
+        [40] = { type = "spell", spellId = 213644, name = "清毒术" },
+        [41] = { type = "spell", spellId = 275779, name = "审判" },
+        [42] = { type = "spell", spellId = 375576, name = "圣洁鸣钟" },
+        [43] = { type = "spell", spellId = 31935, name = "复仇者之盾" },
+        [44] = { type = "spell", spellId = 26573, name = "奉献" },
+        [45] = { type = "spell", spellId = 53600, name = "正义盾击" },
+        [46] = { type = "spell", spellId = 204019, name = "祝福之锤" },
+
+        [70] = {
+            type = "group",
+            num = 3,
             healthPercent = 1,
             role = 2,
             dispel = 3,
-        }
-    elseif specIndex == 3 then
-        fu.HarmfulSpellId = 20271
-        fu.powerType = "MANA"
-        fu.Auras["复仇之怒"].duration = 24
-        fu.blocks = {
-            ["神圣能量"] = 21,
-            ["爆发开关"] = 26,
-            ["AOE开关"] = 27,
-            ["输出模式"] = 28,
-            auras = {
-                ["神圣意志"] = {
-                    index = 22,
-                    auraRef = fu.Auras["神圣意志"],
-                    showKey = "remaining",
-                },
-                ["复仇之怒"] = {
-                    index = 23,
-                    auraRef = fu.Auras["复仇之怒"],
-                    showKey = "remaining",
-                },
-                ["处决宣判"] = {
-                    index = 24,
-                    auraRef = fu.Auras["处决宣判"],
-                    showKey = "remaining",
-                },
-                -- 427441
-                ["圣光之锤"] = {
-                    index = 25,
-                    auraRef = fu.Auras["圣光之锤"],
-                    showKey = "remaining",
-                },
-            },
-        }
-        fu.spellCooldown[213644] = { index = 38, name = "清毒术" }
-        fu.spellCooldown[20271] = { index = 39, name = "审判", charge = 40 }
-        fu.spellCooldown[375576] = { index = 41, name = "圣洁鸣钟" }
-        fu.spellCooldown[184575] = { index = 42, name = "公正之剑" }
-        fu.spellCooldown[343527] = { index = 43, name = "处决宣判" }
-        fu.spellCooldown[255937] = { index = 44, name = "灰烬觉醒" }
+        },
+    },
+    [3] = {
+        powerType = "MANA",
+        [1] = { type = "block", name = "锚点" },
+        [2] = { type = "block", name = "职业" },
+        [3] = { type = "block", name = "专精" },
+        [4] = { type = "block", name = "有效性" },
+        [5] = { type = "block", name = "战斗" },
+        [6] = { type = "block", name = "移动" },
+        [7] = { type = "block", name = "施法" },
+        [8] = { type = "block", name = "引导" },
+        [9] = { type = "block", name = "蓄力" },
+        [10] = { type = "block", name = "蓄力层数" },
+        [11] = { type = "block", name = "生命值" },
+        [12] = { type = "block", name = "能量值" },
+        [13] = { type = "block", name = "一键辅助" },
+        [14] = { type = "block", name = "法术失败" },
+        [15] = { type = "block", name = "目标类型" },
+        [16] = { type = "block", name = "队伍类型" },
+        [17] = { type = "block", name = "队伍人数" },
+        [18] = { type = "block", name = "首领战" },
+        [19] = { type = "block", name = "难度" },
+        [20] = { type = "block", name = "英雄天赋" },
 
-        fu.group_blocks = {
-            unit_start = 70,
-            block_num = 3,
+        [21] = { type = "block", name = "神圣能量" },
+        [22] = { type = "block", name = "爆发开关" },
+        [23] = { type = "block", name = "AOE开关" },
+        [24] = { type = "block", name = "输出模式" },
+        [25] = { type = "aura", name = "神圣意志", auraName = "神圣意志", showKey = "remaining" },
+        [26] = { type = "aura", name = "复仇之怒", auraName = "复仇之怒", showKey = "remaining" },
+        [27] = { type = "aura", name = "处决宣判", auraName = "处决宣判", showKey = "remaining" },
+        [28] = { type = "aura", name = "圣光之锤", auraName = "圣光之锤", showKey = "remaining" },
+
+        [31] = { type = "spell", spellId = 115750, name = "盲目之光" },
+        [32] = { type = "spell", spellId = 853, name = "制裁之锤" },
+        [33] = { type = "spell", spellId = 642, name = "圣盾术" },
+        [34] = { type = "spell", spellId = 6940, name = "牺牲祝福" },
+        [35] = { type = "spell", spellId = 1044, name = "自由祝福" },
+        [36] = { type = "spell", spellId = 1022, name = "保护祝福" },
+        [37] = { type = "spell", spellId = 633, name = "圣疗术" },
+
+        [38] = { type = "spell", spellId = 213644, name = "清毒术" },
+        [39] = { type = "spell", spellId = 20271, name = "审判" },
+        [40] = { type = "spell", spellId = 20271, name = "审判", charge = true, },
+        [41] = { type = "spell", spellId = 375576, name = "圣洁鸣钟" },
+        [42] = { type = "spell", spellId = 184575, name = "公正之剑" },
+        [43] = { type = "spell", spellId = 343527, name = "处决宣判" },
+        [44] = { type = "spell", spellId = 255937, name = "灰烬觉醒" },
+
+        [70] = {
+            type = "group",
+            num = 3,
             healthPercent = 1,
             role = 2,
             dispel = 3,
-        }
-    end
-end
+        },
 
--- 创建圣骑士宏
-function fu.CreateClassMacro()
-    local dynamicSpells = { "神圣震击", "圣光闪现", "圣光术", "荣耀圣令", "清毒术", "圣疗术" }
-    local specialSpells = {}
-    local staticSpells = {
+    },
+}
+
+-- 创建圣骑士宏{
+Fuyutsui.MacrosList = {
+    dynamicSpells = { "神圣震击", "圣光闪现", "圣光术", "荣耀圣令", "清毒术", "圣疗术" },
+    specialSpells = {},
+    staticSpells = {
         [1] = "牺牲祝福",
         [2] = "代祷",
         [3] = "圣盾术",
@@ -224,6 +215,5 @@ function fu.CreateClassMacro()
         [29] = "神圣壁垒",
         [30] = "[@player]荣耀圣令",
         [31] = "圣光道标",
-    }
-    fu.CreateMacro(dynamicSpells, staticSpells, specialSpells)
-end
+    },
+}

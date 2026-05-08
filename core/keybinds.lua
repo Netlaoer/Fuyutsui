@@ -1,7 +1,6 @@
-local _, fu = ...
-
-local actionBars = fu.actionBars
-local keymap = fu.keymap
+local addon, ns = ...
+local actionBars = Fuyutsui.actionBars
+local keymap = Fuyutsui.keymap
 local keybindings = {}
 
 local function ProcessActionSlot(slot)
@@ -42,7 +41,7 @@ local function ProcessActionSlot(slot)
 end
 
 -- 扫描按键
-local function readKeybindings()
+function Fuyutsui:readKeybindings()
     -- 清理并重新扫描
     table.wipe(keybindings)
     C_Timer.After(0.5, function()
@@ -50,30 +49,5 @@ local function readKeybindings()
             ProcessActionSlot(slot)
         end
     end)
-    fu.keybindings = keybindings
-end
-
-fu.readKeybindings = readKeybindings
-
-local frame = CreateFrame("Frame")
-frame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
-
-frame:RegisterEvent("UPDATE_BINDINGS")
-function frame:UPDATE_BINDINGS()
-    readKeybindings()
-end
-
-frame:RegisterEvent("SPELLS_CHANGED")
-function frame:SPELLS_CHANGED()
-    readKeybindings()
-end
-
-frame:RegisterEvent("ACTIONBAR_SHOWGRID")
-function frame:ACTIONBAR_SHOWGRID()
-    readKeybindings()
-end
-
-frame:RegisterEvent("ACTIONBAR_HIDEGRID")
-function frame:ACTIONBAR_HIDEGRID()
-    readKeybindings()
+    Fuyutsui.keybindings = keybindings
 end

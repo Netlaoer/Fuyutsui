@@ -127,8 +127,6 @@ def run_paladin_logic(state_dict, spec_name):
     action_hotkey = None
     current_step = "无匹配技能"
     unit_info = {}
-    
-    
 
     if spec_name == "神圣":
         目标距离 = int(state_dict.get("目标距离", 0) or 0)
@@ -213,7 +211,7 @@ def run_paladin_logic(state_dict, spec_name):
             elif count90 >= 3:
                 current_step = "5豆群抬: 黎明之光"
                 action_hotkey = get_hotkey(0, "黎明之光")
-            elif 战斗 and 1 <= 目标类型 <= 3 and 目标距离 <= 5:
+            elif 战斗 and 1 <= 目标类型 <= 3 and 目标距离 <= 8:
                 current_step = "5豆进攻: 正义盾击"
                 action_hotkey = get_hotkey(0, "正义盾击")
             elif 最低单位 is not None:
@@ -288,7 +286,7 @@ def run_paladin_logic(state_dict, spec_name):
             elif state_dict.get("闪耀之光") > 0 and 生命值 < 80:
                 current_step = "施放 荣耀圣令"
                 action_hotkey = get_hotkey(0, "荣耀圣令")
-            elif tup and spells.get(tup[0], 0) <= 1:
+            elif tup:
                 current_step = f"施放 {tup[0]}"
                 action_hotkey = get_hotkey(0, tup[1])
             else:

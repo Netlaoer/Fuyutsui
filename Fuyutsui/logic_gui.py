@@ -3,9 +3,13 @@
 通用 GUI：根据职业/专精自动适配显示。
 使用 CustomTkinter，背景半透明，文字保持清晰。
 """
+import json
+import re
 import threading
 import time
 import ctypes
+from pathlib import Path
+
 import customtkinter as ctk
 
 import importlib
@@ -14,6 +18,78 @@ from utils import *
 from GetPixels import get_info
 
 title = "冬月"
+
+# 主窗口默认尺寸（未保存过位置/记录损坏时使用）
+DEFAULT_MAIN_GEOMETRY = "400x110"
+DEFAULT_TEAM_GEOMETRY = "550x600"
+DEFAULT_LIVE_INFO_GEOMETRY = "420x540"
+_GUI_GEOMETRY_STATE = Path(__file__).resolve().parent / "gui_window_state.json"
+# 允许的 geometry 字符串：WxH 或 WxH+X+Y（Tk 支持正负偏移）
+_RE_TK_GEOMETRY = re.compile(r"^\d+x\d+([+-]\d+){2}$|^\d+x\d+$")
+
+
+def _read_gui_state_dict() -> dict:
+    try:
+        if _GUI_GEOMETRY_STATE.is_file():
+            data = json.loads(_GUI_GEOMETRY_STATE.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def _write_gui_state_dict(data: dict) -> None:
+    try:
+        _GUI_GEOMETRY_STATE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _load_main_window_geometry() -> str:
+    g = _read_gui_state_dict().get("geometry")
+    if isinstance(g, str):
+        g = g.strip()
+        if _RE_TK_GEOMETRY.match(g):
+            return g
+    return DEFAULT_MAIN_GEOMETRY
+
+
+def _load_subwindow_geometry(state_key: str, default: str) -> str:
+    g = _read_gui_state_dict().get(state_key)
+    if isinstance(g, str):
+        g = g.strip()
+        if _RE_TK_GEOMETRY.match(g):
+            return g
+    return default
+
+
+def _save_main_window_geometry(root: ctk.CTk) -> None:
+    try:
+        root.update_idletasks()
+        g = root.geometry()
+        if not _RE_TK_GEOMETRY.match(g):
+            return
+        data = _read_gui_state_dict()
+        data["geometry"] = g
+        _write_gui_state_dict(data)
+    except Exception:
+        pass
+
+
+def _save_toplevel_geometry(win, state_key: str) -> None:
+    """将 Toplevel 当前 geometry 合并写入 gui_window_state.json（不覆盖其它键）。"""
+    try:
+        win.update_idletasks()
+        g = win.geometry()
+        if not _RE_TK_GEOMETRY.match(g):
+            return
+        data = _read_gui_state_dict()
+        data[state_key] = g
+        _write_gui_state_dict(data)
+    except Exception:
+        pass
+
 
 def _load_logic_module(module_name: str):
     """Load a class-specific logic module from the `class/` package."""
@@ -459,7 +535,7 @@ def create_gui():
     except Exception:
         pass
     root.title(title)
-    root.geometry("400x680")
+    root.geometry(_load_main_window_geometry())
     root.resizable(True, True)
     root.attributes("-topmost", True)
     root.configure(fg_color=BG_DARK)
@@ -470,21 +546,39 @@ def create_gui():
     main_frame.pack(fill="both", expand=True, padx=12, pady=12)
 
     # ---- 1. 职业/专精 + 开关 ----
+    # 顶栏两行共用水平内边距，与右侧「信息」等按钮的 pack 边距一致，避免与第二行「按住」列右缘错位
+    TOP_BAR_PADX = 14
+    TOP_BAR_RIGHT_BTN_PADX = (0, 8)
+    # 「职业:」与「按键」首列左缘对齐（相对 inner_top / toggle_row 内容区）
+    TOP_BAR_LEFT_INDENT = 14
+    TOP_BAR_SIZE = 13
     top_frame = ctk.CTkFrame(main_frame, fg_color=BG_FRAME, corner_radius=8)
     top_frame.pack(fill="x", pady=(0, 6))
 
     inner_top = ctk.CTkFrame(top_frame, fg_color="transparent")
-    inner_top.pack(fill="x", padx=12, pady=(10, 4))
+    inner_top.pack(fill="x", padx=TOP_BAR_PADX, pady=(10, 4))
 
-    class_prefix_label = ctk.CTkLabel(inner_top, text="职业:", font=("Microsoft YaHei", 14, "bold"), text_color=FG_LIGHT)
-    class_prefix_label.pack(side="left", padx=(12, 0))
-    class_name_label = ctk.CTkLabel(inner_top, text="-", font=("Microsoft YaHei", 14, "bold"), text_color=FG_LIGHT)
+    class_prefix_label = ctk.CTkLabel(inner_top, text="职业:", font=("Microsoft YaHei", TOP_BAR_SIZE, "bold"), text_color=FG_LIGHT)
+    class_prefix_label.pack(side="left", padx=(TOP_BAR_LEFT_INDENT, 0))
+    class_name_label = ctk.CTkLabel(inner_top, text="-", font=("Microsoft YaHei", TOP_BAR_SIZE, "bold"), text_color=FG_LIGHT)
     class_name_label.pack(side="left", padx=(6, 0))
-    spec_label = ctk.CTkLabel(inner_top, text="专精: -", font=("Microsoft YaHei", 14, "bold"), text_color=FG_LIGHT)
+    spec_label = ctk.CTkLabel(inner_top, text="专精: -", font=("Microsoft YaHei", TOP_BAR_SIZE, "bold"), text_color=FG_LIGHT)
     spec_label.pack(side="left", padx=(12, 0))
 
+    status_label = ctk.CTkLabel(
+        inner_top,
+        text="状态: 关闭",
+        font=("Microsoft YaHei", TOP_BAR_SIZE, "bold"),
+        text_color=RED,
+    )
+    status_label.pack(side="left", padx=(12, 0))
+
     toggle_row = ctk.CTkFrame(top_frame, fg_color="transparent")
-    toggle_row.pack(fill="x", padx=12, pady=(0, 10))
+    toggle_row.pack(fill="x", padx=TOP_BAR_PADX, pady=(0, 10))
+
+    mode_btn_frame = ctk.CTkFrame(toggle_row, fg_color="transparent", border_width=0)
+    toggle_row_spacer = ctk.CTkFrame(toggle_row, fg_color="transparent", border_width=0)
+    mode_btn_frame.pack(side="right", padx=TOP_BAR_RIGHT_BTN_PADX)
 
     binding_in_progress = False
 
@@ -602,16 +696,16 @@ def create_gui():
 
     bind_btn = ctk.CTkButton(
         toggle_row,
-        text="绑定按键",
+        text="按键",
         command=start_binding_key,
         font=("Microsoft YaHei", 12),
         fg_color=BG_DARK,
         text_color=FG_LIGHT,
         hover_color="#3d3d3d",
         corner_radius=8,
-        width=90,
+        width=50,
     )
-    bind_btn.pack(side="left", padx=(0, 8))
+    bind_btn.pack(side="left", padx=(10, 8))
 
     bound_key_label = ctk.CTkLabel(
         toggle_row,
@@ -619,22 +713,7 @@ def create_gui():
         font=("Microsoft YaHei", 12),
         text_color=FG_DIM,
     )
-    bound_key_label.pack(side="left")
-
-    status_label = ctk.CTkLabel(
-        toggle_row,
-        text="状态: 关闭",
-        font=("Microsoft YaHei", 12),
-        text_color=RED,
-    )
-    status_label.pack(side="right")
-
-    # ---- 额外：发送模式（开关/单击/按住）----
-    mode_row = ctk.CTkFrame(top_frame, fg_color="transparent")
-    mode_row.pack(fill="x", padx=12, pady=(0, 10))
-
-    mode_label = ctk.CTkLabel(mode_row, text="发送模式:", font=("Microsoft YaHei", 12), text_color=FG_LIGHT)
-    mode_label.pack(side="left")
+    bound_key_label.pack(side="left", padx=(0, 8))
 
     # 使用 GUI 按钮控制全局发送模式，并在切换时立即停止当前发送
     def set_send_mode(mode: str):
@@ -653,43 +732,45 @@ def create_gui():
         hold_btn.configure(text_color=GREEN if active == "hold" else FG_LIGHT)
 
     switch_btn = ctk.CTkButton(
-        mode_row,
+        mode_btn_frame,
         text="开关",
         command=lambda: set_send_mode("switch"),
         font=("Microsoft YaHei", 12),
-        width=80,
+        width=50,
         fg_color=BG_DARK,
         text_color=GREEN if _send_mode == "switch" else FG_LIGHT,
         hover_color="#3d3d3d",
         corner_radius=8,
     )
-    switch_btn.pack(side="left", padx=(12, 6))
+    switch_btn.pack(side="left", padx=(0, 2))
 
     click_btn = ctk.CTkButton(
-        mode_row,
+        mode_btn_frame,
         text="单击",
         command=lambda: set_send_mode("click"),
         font=("Microsoft YaHei", 12),
-        width=80,
+        width=50,
         fg_color=BG_DARK,
         text_color=GREEN if _send_mode == "click" else FG_LIGHT,
         hover_color="#3d3d3d",
         corner_radius=8,
     )
-    click_btn.pack(side="left", padx=(6, 6))
+    click_btn.pack(side="left", padx=(2, 2))
 
     hold_btn = ctk.CTkButton(
-        mode_row,
+        mode_btn_frame,
         text="按住",
         command=lambda: set_send_mode("hold"),
         font=("Microsoft YaHei", 12),
-        width=80,
+        width=50,
         fg_color=BG_DARK,
         text_color=GREEN if _send_mode == "hold" else FG_LIGHT,
         hover_color="#3d3d3d",
         corner_radius=8,
     )
-    hold_btn.pack(side="left", padx=(6, 6))
+    hold_btn.pack(side="left", padx=(2, 0))
+
+    toggle_row_spacer.pack(side="left", fill="x", expand=True)
 
     # ---- 3. 显示队伍（弹窗）----
     def open_team_window():
@@ -705,13 +786,22 @@ def create_gui():
 
         team_window = ctk.CTkToplevel(root)
         team_window.title("队伍信息")
-        team_window.geometry("550x600")
+        team_window.geometry(_load_subwindow_geometry("team_geometry", DEFAULT_TEAM_GEOMETRY))
         team_window.resizable(True, True)
         team_window.attributes("-topmost", True)
         try:
             team_window.attributes("-alpha", WINDOW_ALPHA)
         except Exception:
             pass
+
+        def _close_team_window():
+            _save_toplevel_geometry(team_window, "team_geometry")
+            try:
+                team_window.destroy()
+            except Exception:
+                pass
+
+        team_window.protocol("WM_DELETE_WINDOW", _close_team_window)
 
         header_frame = ctk.CTkFrame(team_window, fg_color=BG_FRAME, corner_radius=8)
         header_frame.pack(fill="x", padx=12, pady=(12, 8))
@@ -832,134 +922,212 @@ def create_gui():
 
         refresh()
 
-    # 顶部新增按钮：点击弹窗展示所有单位信息
-    normal_geometry = "400x680"
-    small_geometry = "400x110"
-    is_small = False
+    _live_info_win = [None]
+    _live_info_btn_ref = [None]
 
-    resize_btn = None
+    def open_live_info_window():
+        with _state_lock:
+            spec_snapshot = _spec_name
 
-    def toggle_window_size():
-        nonlocal is_small, resize_btn
-        is_small = not is_small
-        root.geometry(small_geometry if is_small else normal_geometry)
-        # 同步按钮图标：当前为缩小状态时显示“▲”表示可恢复
-        if resize_btn is not None:
-            resize_btn.configure(text=("▲" if is_small else "▼"))
+        if spec_snapshot is None:
+            return
 
-    resize_btn = ctk.CTkButton(
+        existing = _live_info_win[0]
+        if existing is not None:
+            try:
+                if existing.winfo_exists():
+                    existing.lift()
+                    try:
+                        existing.focus_force()
+                    except Exception:
+                        pass
+                    return
+            except Exception:
+                pass
+
+        live_win = ctk.CTkToplevel(root)
+        _live_info_win[0] = live_win
+        live_win.title("实时信息")
+        live_win.geometry(_load_subwindow_geometry("live_info_geometry", DEFAULT_LIVE_INFO_GEOMETRY))
+        live_win.resizable(True, True)
+        live_win.attributes("-topmost", True)
+        try:
+            live_win.attributes("-alpha", WINDOW_ALPHA)
+        except Exception:
+            pass
+
+        def on_close():
+            _save_toplevel_geometry(live_win, "live_info_geometry")
+            _live_info_win[0] = None
+            b = _live_info_btn_ref[0]
+            if b is not None:
+                try:
+                    b.configure(text_color=FG_LIGHT)
+                except Exception:
+                    pass
+            try:
+                live_win.destroy()
+            except Exception:
+                pass
+
+        live_win.protocol("WM_DELETE_WINDOW", on_close)
+
+        body = ctk.CTkFrame(live_win, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=12, pady=12)
+
+        status_frame = ctk.CTkFrame(body, fg_color=BG_FRAME, corner_radius=8)
+        status_frame.pack(fill="both", expand=True, pady=(0, 6))
+
+        status_header = ctk.CTkFrame(status_frame, fg_color="transparent")
+        status_header.pack(fill="x", padx=12, pady=(10, 2))
+        ctk.CTkLabel(status_header, text="实时状态", font=("Microsoft YaHei", 13, "bold"), text_color=FG_LIGHT).pack(
+            side="left"
+        )
+        scan_ms_label = ctk.CTkLabel(status_header, text="扫描: - ms", font=("Microsoft YaHei", 11), text_color=FG_DIM)
+        scan_ms_label.pack(side="right")
+
+        status_grid = ctk.CTkFrame(status_frame, fg_color="transparent")
+        status_grid.pack(fill="x", padx=12, pady=4)
+
+        status_vars = {}
+
+        def update_status_display(keys):
+            for w in status_grid.winfo_children():
+                w.destroy()
+            status_vars.clear()
+            for i, k in enumerate(keys):
+                row, col = i // 3, (i % 3) * 2
+                ctk.CTkLabel(status_grid, text=k + ":", font=("Microsoft YaHei", 12), text_color=FG_DIM).grid(
+                    row=row, column=col, sticky="w", padx=(0, 4), pady=1
+                )
+                lbl = ctk.CTkLabel(status_grid, text="-", font=("Microsoft YaHei", 12), text_color=FG_LIGHT)
+                lbl.grid(row=row, column=col + 1, sticky="w", padx=(0, 16), pady=1)
+                status_vars[k] = lbl
+
+        action_label = ctk.CTkLabel(status_frame, text="当前步骤: -", font=("Microsoft YaHei", 12), text_color=FG_LIGHT)
+        action_label.pack(anchor="w", padx=12, pady=(8, 10))
+
+        cooldown_frame = ctk.CTkFrame(body, fg_color=BG_FRAME, corner_radius=8)
+        cooldown_frame.pack(fill="x", pady=(0, 6))
+        cooldown_header = ctk.CTkFrame(cooldown_frame, fg_color="transparent")
+        cooldown_header.pack(fill="x", padx=12, pady=(10, 2))
+        ctk.CTkLabel(cooldown_header, text="技能冷却", font=("Microsoft YaHei", 13, "bold"), text_color=FG_LIGHT).pack(
+            side="left"
+        )
+        cooldown_grid = ctk.CTkFrame(cooldown_frame, fg_color="transparent")
+        cooldown_grid.pack(fill="x", padx=12, pady=(4, 10))
+        cooldown_vars = {}
+
+        cooldown_per_row = 3
+
+        def update_cooldown_display(spell_list):
+            """根据专精技能列表重建冷却显示，每行 3 个技能"""
+            for w in cooldown_grid.winfo_children():
+                w.destroy()
+            cooldown_vars.clear()
+            if not spell_list:
+                return
+            for i, name in enumerate(spell_list):
+                row = i // cooldown_per_row
+                col = (i % cooldown_per_row) * 2
+                ctk.CTkLabel(cooldown_grid, text=name + ":", font=("Microsoft YaHei", 11), text_color=FG_DIM).grid(
+                    row=row, column=col, sticky="w", padx=(0, 4), pady=1
+                )
+                lbl = ctk.CTkLabel(cooldown_grid, text="-", font=("Microsoft YaHei", 11), text_color=FG_LIGHT)
+                lbl.grid(row=row, column=col + 1, sticky="w", padx=(0, 16), pady=1)
+                cooldown_vars[name] = lbl
+
+        last_cooldown_spells = [None]
+        last_status_keys = [None]
+
+        def refresh_live():
+            if not live_win.winfo_exists():
+                return
+
+            with _state_lock:
+                sd = dict(_state_dict)
+                spec = _spec_name
+                class_id = _class_id
+                spec_id = _spec_id
+
+            if spec is None:
+                scan_ms_label.configure(text="扫描: -")
+                action_label.configure(text="当前步骤: 专精未知")
+                live_win.after(GUI_UPDATE_MS, refresh_live)
+                return
+
+            current_status_keys, _, current_cooldown_spells = get_class_spec_view_data(class_id, spec_id)
+            if last_status_keys[0] != current_status_keys:
+                last_status_keys[0] = current_status_keys
+                update_status_display(current_status_keys)
+
+            if last_cooldown_spells[0] != current_cooldown_spells:
+                last_cooldown_spells[0] = current_cooldown_spells
+                update_cooldown_display(current_cooldown_spells)
+
+            spells_data = sd.get("spells") or {}
+            for name, lbl in cooldown_vars.items():
+                val = spells_data.get(name)
+                if val is None:
+                    lbl.configure(text="-", text_color=FG_DIM)
+                else:
+                    lbl.configure(text=str(int(val)), text_color=FG_LIGHT)
+
+            for k in status_vars:
+                v = sd.get(k)
+                txt = str(v) if v is not None else "-"
+                status_vars[k].configure(text=txt, text_color=GREEN if v is True else (RED if v is False else FG_LIGHT))
+
+            action_label.configure(text=f"当前步骤: {_current_step}")
+            scan_ms_label.configure(text=f"扫描: {_scan_ms:.1f} ms")
+
+            live_win.after(GUI_UPDATE_MS, refresh_live)
+
+        b = _live_info_btn_ref[0]
+        if b is not None:
+            b.configure(text_color=GREEN)
+
+        refresh_live()
+
+    # 顶部：实时信息、显示队伍
+    live_info_btn = ctk.CTkButton(
         inner_top,
-        text="▼",
-        command=toggle_window_size,
+        text="信息",
+        command=open_live_info_window,
         font=("Microsoft YaHei", 12),
-        width=28,
+        width=50,
         fg_color=BG_DARK,
         text_color=FG_LIGHT,
         hover_color="#3d3d3d",
         corner_radius=8,
     )
-    resize_btn.pack(side="right", padx=(0, 8))
+    live_info_btn.pack(side="right", padx=TOP_BAR_RIGHT_BTN_PADX)
+    _live_info_btn_ref[0] = live_info_btn
 
     ctk.CTkButton(
         inner_top,
-        text="显示队伍",
+        text="队伍",
         command=open_team_window,
         font=("Microsoft YaHei", 12),
-        width=100,
+        width=50,
         fg_color=BG_DARK,
         text_color=FG_LIGHT,
         hover_color="#3d3d3d",
         corner_radius=8,
     ).pack(side="right", padx=(8, 0))
 
-    # ---- 2. 状态区域（未检测到职业时不显示）----
-    content_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-    # 不 pack content_frame，等检测到职业后再显示
-
-    status_frame = ctk.CTkFrame(content_frame, fg_color=BG_FRAME, corner_radius=8)
-
-    status_frame.pack(fill="both", expand=True, pady=(0, 6))
-
-    status_header = ctk.CTkFrame(status_frame, fg_color="transparent")
-    status_header.pack(fill="x", padx=12, pady=(10, 2))
-    ctk.CTkLabel(status_header, text="实时状态", font=("Microsoft YaHei", 13, "bold"), text_color=FG_LIGHT).pack(side="left")
-    scan_ms_label = ctk.CTkLabel(status_header, text="扫描: - ms", font=("Microsoft YaHei", 11), text_color=FG_DIM)
-    scan_ms_label.pack(side="right")
-
-    status_grid = ctk.CTkFrame(status_frame, fg_color="transparent")
-    status_grid.pack(fill="x", padx=12, pady=4)
-
-    status_vars = {}
-
-    def update_status_display(keys):
-        for w in status_grid.winfo_children():
-            w.destroy()
-        status_vars.clear()
-        for i, k in enumerate(keys):
-            row, col = i // 3, (i % 3) * 2
-            ctk.CTkLabel(status_grid, text=k + ":", font=("Microsoft YaHei", 12), text_color=FG_DIM).grid(
-                row=row, column=col, sticky="w", padx=(0, 4), pady=1)
-            lbl = ctk.CTkLabel(status_grid, text="-", font=("Microsoft YaHei", 12), text_color=FG_LIGHT)
-            lbl.grid(row=row, column=col + 1, sticky="w", padx=(0, 16), pady=1)
-            status_vars[k] = lbl
-
-    action_label = ctk.CTkLabel(status_frame, text="当前步骤: -", font=("Microsoft YaHei", 12), text_color=FG_LIGHT)
-    action_label.pack(anchor="w", padx=12, pady=(8, 10))
-
-    # ---- 技能冷却 ----
-    cooldown_frame = ctk.CTkFrame(content_frame, fg_color=BG_FRAME, corner_radius=8)
-    cooldown_frame.pack(fill="x", pady=(0, 6))
-    cooldown_header = ctk.CTkFrame(cooldown_frame, fg_color="transparent")
-    cooldown_header.pack(fill="x", padx=12, pady=(10, 2))
-    ctk.CTkLabel(cooldown_header, text="技能冷却", font=("Microsoft YaHei", 13, "bold"), text_color=FG_LIGHT).pack(side="left")
-    cooldown_grid = ctk.CTkFrame(cooldown_frame, fg_color="transparent")
-    cooldown_grid.pack(fill="x", padx=12, pady=(4, 10))
-    cooldown_vars = {}
-
-    COOLDOWN_PER_ROW = 3
-
-    def update_cooldown_display(spell_list):
-        """根据专精技能列表重建冷却显示，每行 3 个技能"""
-        for w in cooldown_grid.winfo_children():
-            w.destroy()
-        cooldown_vars.clear()
-        if not spell_list:
-            return
-        for i, name in enumerate(spell_list):
-            row = i // COOLDOWN_PER_ROW
-            col = (i % COOLDOWN_PER_ROW) * 2
-            ctk.CTkLabel(cooldown_grid, text=name + ":", font=("Microsoft YaHei", 11), text_color=FG_DIM).grid(
-                row=row, column=col, sticky="w", padx=(0, 4), pady=1)
-            lbl = ctk.CTkLabel(cooldown_grid, text="-", font=("Microsoft YaHei", 11), text_color=FG_LIGHT)
-            lbl.grid(row=row, column=col + 1, sticky="w", padx=(0, 16), pady=1)
-            cooldown_vars[name] = lbl
-
-    last_cooldown_spells = [None]
-
-    last_status_keys = [None]
-
     def update_display():
         with _state_lock:
-            sd = dict(_state_dict)
             enabled = _logic_enabled
             mode = _send_mode
             class_name = _class_name
             spec = _spec_name
-            class_id = _class_id
-            spec_id = _spec_id
 
         class_name_label.configure(
             text=class_name or "-",
             text_color=CLASS_NAME_COLORS.get(class_name, FG_LIGHT),
         )
         spec_label.configure(text=f"专精: {spec or '-'}")
-        if spec is None:
-            if content_frame.winfo_ismapped():
-                content_frame.pack_forget()
-            root.after(GUI_UPDATE_MS, update_display)
-            return
-        if not content_frame.winfo_ismapped():
-            content_frame.pack(fill="both", expand=True, pady=(0, 6))
 
         # 发送模式显示：单击模式固定显示“状态: 单击”并高亮
         if mode == "click":
@@ -970,36 +1138,8 @@ def create_gui():
                 text_color=GREEN if enabled else RED,
             )
 
-        current_status_keys, _, current_cooldown_spells = get_class_spec_view_data(class_id, spec_id)
-        if last_status_keys[0] != current_status_keys:
-            last_status_keys[0] = current_status_keys
-            update_status_display(current_status_keys)
-
-        if last_cooldown_spells[0] != current_cooldown_spells:
-            last_cooldown_spells[0] = current_cooldown_spells
-            update_cooldown_display(current_cooldown_spells)
-
-        spells_data = sd.get("spells") or {}
-        for name, lbl in cooldown_vars.items():
-            val = spells_data.get(name)
-            if val is None:
-                lbl.configure(text="-", text_color=FG_DIM)
-            else:
-                lbl.configure(text=str(int(val)), text_color=FG_LIGHT)
-
-        for k in status_vars:
-            v = sd.get(k)
-            txt = str(v) if v is not None else "-"
-            status_vars[k].configure(text=txt, text_color=GREEN if v is True else (RED if v is False else FG_LIGHT))
-
-        action_label.configure(text=f"当前步骤: {_current_step}")
-        scan_ms_label.configure(text=f"扫描: {_scan_ms:.1f} ms")
-
         root.after(GUI_UPDATE_MS, update_display)
 
-    default_keys, _, _ = get_class_spec_view_data(None, None)
-    update_status_display(default_keys)
-    last_status_keys[0] = default_keys
     root.after(0, update_display)
 
     def start_worker():
@@ -1010,6 +1150,12 @@ def create_gui():
 
     worker = threading.Thread(target=start_worker, daemon=True)
     worker.start()
+
+    def on_main_window_close():
+        _save_main_window_geometry(root)
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_main_window_close)
 
     root.mainloop()
 
