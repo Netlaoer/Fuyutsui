@@ -11,6 +11,7 @@
 # 忽略 Python 的缓存文件
 Fuyutsui/__pycache__/
 *.pyc
+Fuyutsui/gui_window_state.json
 
 # 忽略 .NET 构建产物
 bin/
@@ -23,3 +24,4 @@ Thumbs.db
 # 如果你的插件包含私密测试数据，可以忽略特定文件夹
 # /Test/
 test/
+Fuyutsui_C#/
