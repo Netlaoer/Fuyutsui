@@ -1030,7 +1030,7 @@ function Fuyutsui:OnUpdateUnitAura()
         if blocks.groups.rejuv then
             local index = blocks.groups.start + (data.index - 1) * blocks.groups.num + blocks.groups.rejuv
             local rejuvCount = getRejuvCount(unit)
-            Fuyutsui:CreatTexture(index, rejuvCount / 255)
+            self:CreatTexture(index, rejuvCount / 255)
         end
     end
 end
