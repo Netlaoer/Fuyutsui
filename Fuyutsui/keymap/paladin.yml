@@ -191,7 +191,7 @@
 191: {unit: 0, 技能: "黎明之光", 热键: "ALT-SHIFT-8"}
 192: {unit: 0, 技能: "自由祝福", 热键: "ALT-SHIFT-9"}
 193: {unit: 0, 技能: "神圣棱镜", 热键: "ALT-SHIFT-0"}
-194: {unit: 0, 技能: "神圣震击", 热键: "ALT-SHIFT--"}
+194: {unit: 0, 技能: "神圣震击", 热键: "ALT-SHIFT-7"}
 195: {unit: 0, 技能: "公正之剑", 热键: "ALT-SHIFT-="}
 196: {unit: 0, 技能: "", 热键: "CTRL-SHIFT-NUMPAD1"}
 197: {unit: 0, 技能: "处决宣判", 热键: "CTRL-SHIFT-NUMPAD2"}

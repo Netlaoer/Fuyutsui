@@ -53,7 +53,7 @@ def run_evoker_logic(state_dict, spec_name):
     英雄天赋 = state_dict.get("英雄天赋", 0)
 
     精华能量 = state_dict.get("精华能量", 0)
-    
+
     失败法术 = _get_failed_spell(state_dict)
     tup = action_map.get(一键辅助)
     action_hotkey = None
@@ -114,6 +114,7 @@ def run_evoker_logic(state_dict, spec_name):
         活化烈焰CD = spells.get("活化烈焰", -1)
         黑檀之力CD = spells.get("黑檀之力", -1)
         先知先觉CD = spells.get("先知先觉", -1)
+        先知先觉CH = spells.get("先知先觉充能", -1)
         亘古吐息CD = spells.get("亘古吐息", -1)
         净除CD = spells.get("净除", -1)
         青翠之拥CD = spells.get("青翠之拥", -1)

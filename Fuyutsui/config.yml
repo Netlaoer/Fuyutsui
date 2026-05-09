@@ -966,7 +966,7 @@ state:
       先知先觉: {step: 47, type: "int"}
       黑檀之力: {step: 48, type: "int"}
       亘古吐息: {step: 49, type: "int"}
-      先知先觉层数: {step: 50, type: "int"}
+      先知先觉充能: {step: 50, type: "int"}
     group:
       start: 70
       num: 4
