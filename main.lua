@@ -117,18 +117,20 @@ end
 local function updateCooldownSpellKnown()
     spells = {}
     if not blocks.spells then return end
-    for spellID, info in pairs(blocks.spells) do
-        local isKnown = IsSpellKnown(spellID)
-        if info.inSpellBook then
-            isKnown = IsSpellInSpellBook(spellID)
+    C_Timer.After(1, function()
+        for spellID, info in pairs(blocks.spells) do
+            local isKnown = IsSpellKnown(spellID)
+            if info.inSpellBook then
+                isKnown = IsSpellInSpellBook(spellID)
+            end
+            local index = info.index
+            if isKnown or info.forcedKnown then
+                spells[spellID] = info
+            else
+                Fuyutsui:CreatTexture(index, 1)
+            end
         end
-        local index = info.index
-        if isKnown or info.forcedKnown then
-            spells[spellID] = info
-        else
-            Fuyutsui:CreatTexture(index, 1)
-        end
-    end
+    end)
 end
 
 -- 更新法术已知状态
