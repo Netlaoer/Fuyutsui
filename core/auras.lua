@@ -61,6 +61,26 @@ local auras = {
                 [1269383] = { event = e["图标发光隐藏"] }, -- 英勇打击
             },
         },
+        ["顺劈斩高亮"] = {
+            remaining = 0,
+            duration = 15, 
+            expirationTime = nil,
+            addAuras = nil,
+            updateAuras = nil,
+            removeAuras = {
+                [845] = { event = e["图标发光隐藏"] }, -- 顺劈斩(845)发光结束时取消
+            },
+        },
+        ["致死高亮"] = {
+            remaining = 0,
+            duration = 15, 
+            expirationTime = nil,
+            addAuras = nil,
+            updateAuras = nil,
+            removeAuras = {
+                [12294] = { event = e["图标发光隐藏"] }, -- 致死打击发光结束时取消
+            },
+        },
     },
     -- 圣骑士
     [2] = {

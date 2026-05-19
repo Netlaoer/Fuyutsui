@@ -27,7 +27,8 @@ Fuyutsui.ClassBlocks = {
         [22] = { type = "block", name = "敌人人数" },
         [23] = { type = "aura", name = "斩杀高亮", auraName = "斩杀高亮", showKey = "remaining" },
         [24] = { type = "aura", name = "英勇打击高亮", auraName = "英勇打击高亮", showKey = "remaining" },
-        
+        [25] = { type = "aura", name = "顺劈斩高亮", auraName = "顺劈斩高亮", showKey = "remaining" },
+        [26] = { type = "aura", name = "致死高亮", auraName = "致死高亮", showKey = "remaining" },
 
 
         [31] = { type = "spell", spellId = 202168, name = "胜利在望" },

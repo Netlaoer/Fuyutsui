@@ -94,6 +94,8 @@ def run_warrior_logic(state_dict, spec_name):
     elif spec_name == "武器": 
         英勇打击高亮 = state_dict.get("英勇打击高亮", 0)
         斩杀高亮 = state_dict.get("斩杀高亮", 0)
+        顺劈斩高亮 = state_dict.get("顺劈斩高亮", 0)
+        致死高亮 = state_dict.get("致死高亮", 0)
         致死打击 = spells.get("致死打击", -1)
         巨人打击 = spells.get("巨人打击", -1)
         崩摧 = spells.get("崩摧", -1)
@@ -124,6 +126,12 @@ def run_warrior_logic(state_dict, spec_name):
                 elif 敌人人数<=2 and 英勇打击高亮 > 0 and 能量值 >= 20:
                     current_step = "施放 英勇打击"
                     action_hotkey = get_hotkey(0, "猛击")
+                elif 敌人人数<=2 and 顺劈斩 == 0 and 顺劈斩高亮 > 0 and 能量值 >= 20:
+                    current_step = "施放 顺劈斩"
+                    action_hotkey = get_hotkey(0, "顺劈斩")
+                elif 致死打击 == 0 and 致死高亮 > 0 and 能量值 >= 15:
+                    current_step = "施放 致死打击"
+                    action_hotkey = get_hotkey(0, "致死打击")
                 elif 致死打击 == 0 and 能量值 >= 30:
                     current_step = "施放 致死打击"
                     action_hotkey = get_hotkey(0, "致死打击")

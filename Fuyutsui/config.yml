@@ -28,6 +28,8 @@ state:
     敌人人数: {step: 22, type: "int" }
     斩杀高亮: {step: 23, type: "int" }
     英勇打击高亮: {step: 24, type: "int" }
+    顺劈斩高亮: {step: 25, type: "int" }
+    致死高亮: {step: 25, type: "int" }
     spells:
       胜利在望: {step: 31, type: "int" }
       勇士之矛: {step: 32, type: "int" }
