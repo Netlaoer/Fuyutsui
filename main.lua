@@ -986,11 +986,14 @@ local function addNameplate(unit)
         affectingCombat = UnitAffectingCombat(unit),
     }
 end
-
+local testMap = {
+    [2393] = true, -- 银月城
+    [2097] = true, -- 艾杰斯亚学院
+}
 -- 更新范围内敌方姓名版数量
 function Fuyutsui:updateEnemyCount()
     local count = 0
-    local inTestMap = state.mapID and state.mapID == 2393
+    local inTestMap = state.mapID and testMap[state.mapID]
     for unit, data in pairs(nameplate) do
         local minRange, maxRange = updateUnitRange(unit)
         data.minRange = minRange
@@ -1260,6 +1263,7 @@ function Fuyutsui:ZONE_CHANGED()
     state.mapID = C_Map.GetBestMapForUnit("player") or 0
     state.mapInfo = C_Map.GetMapInfo(state.mapID)
     state.subzone = GetSubZoneText()
+    -- print("ZONE_CHANGED", state.mapID, state.mapInfo, state.subzone)
     if GetBindLocation() == state.subzone then
         self:Print("欢迎回家!")
     end
@@ -1269,6 +1273,7 @@ function Fuyutsui:ZONE_CHANGED_INDOORS()
     state.mapID = C_Map.GetBestMapForUnit("player") or 0
     state.mapInfo = C_Map.GetMapInfo(state.mapID)
     state.subzone = GetSubZoneText()
+    -- print("ZONE_CHANGED_INDOORS", state.mapID, state.mapInfo, state.subzone)
     if GetBindLocation() == state.subzone then
         self:Print("欢迎回家!")
     end
