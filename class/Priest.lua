@@ -62,7 +62,10 @@ Fuyutsui.ClassBlocks = {
         [45] = { type = "spell", spellId = 32379, name = "暗言术：灭" },
         [49] = { type = "spell", spellId = 34433, name = "暗影魔" },
         [50] = { type = "spell", spellId = 1235211, name = "暗影分流" },
+        [51] = { type = "spell", spellId = 586, name = "渐隐术" },
+
         [48] = { type = "block", name = "延迟" },
+        [52] = { type = "block", name = "大红冷却" },
 
         [70] = {
             type = "group",
@@ -227,5 +230,7 @@ Fuyutsui.MacrosList = {
         [33] = "真言术：盾",
         [34] = "愈合祷言",
         [35] = "圣言术：静",
+        [37] = "item:241304\n/cast item:241305", -- 银月城生命药水
+        [38] = "渐隐术",
     },
 }

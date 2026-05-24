@@ -1437,7 +1437,7 @@ end
 function Fuyutsui:UNIT_SPELLCAST_SUCCEEDED(_, unitTarget, castGUID, spellID, castBarID)
     if unitTarget ~= "player" or isSec(spellID) then return end
     self:updateDrinkStatus(spellID)
-    -- printSuccSpell(spellID)
+   -- printSuccSpell(spellID)
     self:updateFailedSpellBySuccess(spellID)
     self:updateAuraBySuccess(spellID, castBarID)
     if spellID == 384255 then
@@ -1729,6 +1729,16 @@ function Fuyutsui:UNIT_AURA(_, unit, info)
             obj.aura[v] = nil
         end
     end
+end
+
+function Fuyutsui:ENCOUNTER_TIMELINE_EVENT_ADDED(_, eventInfo)
+
+end
+
+function Fuyutsui:ENCOUNTER_TIMELINE_EVENT_REMOVED(_, eventID)
+end
+
+function Fuyutsui:ENCOUNTER_TIMELINE_EVENT_STATE_CHANGED(_, eventID)
 end
 
 function Fuyutsui:StartFrameUpdates()

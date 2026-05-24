@@ -82,6 +82,9 @@ function Fuyutsui:OnEnable()
     self:RegisterEvent("ACTIONBAR_HIDEGRID")
     self:RegisterEvent("ACTIONBAR_SHOWGRID")
     self:RegisterEvent("SPELL_UPDATE_CHARGES")
+    self:RegisterEvent("ENCOUNTER_TIMELINE_EVENT_ADDED")
+    self:RegisterEvent("ENCOUNTER_TIMELINE_EVENT_REMOVED")
+    self:RegisterEvent("ENCOUNTER_TIMELINE_EVENT_STATE_CHANGED")
     if self.StartFrameUpdates then
         self:StartFrameUpdates()
     end

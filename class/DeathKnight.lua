@@ -189,5 +189,4 @@ Fuyutsui.MacrosList = {
         [40] = "item:241288\n/cast item:241289", -- 鲁莽药水
         [41] = "item:241304\n/cast item:241305", -- 银月城生命药水
     }
-
 }
