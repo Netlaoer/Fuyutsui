@@ -60,6 +60,12 @@ Fuyutsui.ClassBlocks = {
         [43] = { type = "spell", spellId = 472433, name = "福音" },
         [44] = { type = "spell", spellId = 8092, name = "心灵震爆" },
         [45] = { type = "spell", spellId = 32379, name = "暗言术：灭" },
+        [49] = { type = "spell", spellId = 34433, name = "暗影魔" },
+        [50] = { type = "spell", spellId = 1235211, name = "暗影分流" },
+        [51] = { type = "spell", spellId = 586, name = "渐隐术" },
+
+        [48] = { type = "block", name = "延迟" },
+        [52] = { type = "block", name = "大红冷却" },
 
         [70] = {
             type = "group",
@@ -117,7 +123,7 @@ Fuyutsui.ClassBlocks = {
         [36] = { type = "spell", spellId = 33076, name = "愈合祷言" },
         [37] = { type = "spell", spellId = 33076, name = "愈合祷言", charge = true },
         [38] = { type = "spell", spellId = 2050, name = "圣言术：静" },
-        [39] = { type = "spell", spellId = 2050, name = "圣言术：静" , charge = true},
+        [39] = { type = "spell", spellId = 2050, name = "圣言术：静", charge = true },
         [40] = { type = "spell", spellId = 88625, name = "圣言术：罚" },
         [41] = { type = "spell", spellId = 200183, name = "神圣化身" },
         [42] = { type = "spell", spellId = 14914, name = "神圣之火" },
@@ -167,6 +173,12 @@ Fuyutsui.ClassBlocks = {
         [26] = { type = "block", name = "目标生命值" },
         [27] = { type = "block", name = "施法技能" },
 
+        [31] = { type = "spell", spellId = 8122, name = "心灵尖啸" },
+        [32] = { type = "spell", spellId = 32375, name = "群体驱散" },
+        [33] = { type = "spell", spellId = 527, name = "纯净术" },
+        [34] = { type = "spell", spellId = 19236, name = "绝望祷言" },
+        [35] = { type = "spell", spellId = 232633, name = "奥术洪流" },
+
         [36] = { type = "spell", spellId = 8092, name = "心灵震爆" },
         [37] = { type = "spell", spellId = 32379, name = "暗言术：灭" },
         [38] = { type = "spell", spellId = 263165, name = "虚空洪流" },
@@ -186,7 +198,7 @@ Fuyutsui.MacrosList = {
         [1] = "心灵震爆",
         [2] = "惩击",
         [3] = "暗言术：痛",
-        [4] = "真言术：韧",
+        [4] = "[@player]真言术：韧",
         [5] = "神圣新星",
         [6] = "苦修",
         [7] = "真言术：耀",
@@ -218,5 +230,7 @@ Fuyutsui.MacrosList = {
         [33] = "真言术：盾",
         [34] = "愈合祷言",
         [35] = "圣言术：静",
+        [37] = "item:241304\n/cast item:241305", -- 银月城生命药水
+        [38] = "渐隐术",
     },
 }

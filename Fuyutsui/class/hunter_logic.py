@@ -128,10 +128,7 @@ def run_hunter_logic(state_dict, spec_name):
             elif 自然之友 > 0 and 能量值 >= 30 and 杀戮命令 == 0:
                 current_step = "施放 杀戮命令"
                 action_hotkey = get_hotkey(0, "杀戮命令")
-            elif 狂野怒火光环 > 0 and 能量值 >= 30 and 杀戮命令 == 0 and 杀戮充能 == 0:
-                current_step = "施放 杀戮命令"
-                action_hotkey = get_hotkey(0, "杀戮命令")
-            elif 倒刺射击 == 0:
+            elif 倒刺射击 == 0 and 能量值<=60:
                 current_step = "施放 倒刺射击"
                 action_hotkey = get_hotkey(0, "倒刺射击")
             elif 能量值 >= 35:

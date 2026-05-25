@@ -51,6 +51,15 @@ action_map = {
     45: ("坍缩之星", "虚空变形"),
     46: ("根除", "收割"),
     47: ("灵魂献祭", "献祭光环"),
+    48: ("深渊凝视", "眼棱"),
+    49: ("邪能之刃", "邪能之刃"),
+    50: ("毁灭", "毁灭"),
+    51: ("毁灭", "毁灭"),
+    52: ("混乱打击", "混乱打击"),
+    53: ("混乱打击", "混乱打击"),
+    54: ("恶魔变形", "恶魔变形"),
+    55: ("恶魔变形", "恶魔变形"),
+    56: ("吞噬之焰", "献祭光环"),
 }
 
 failed_spell_map = {
@@ -58,7 +67,6 @@ failed_spell_map = {
     4: "禁锢",
     6: "混乱新星",
     16: "恶魔变形",
-    19: "烈火烙印",
     26: "邪能毁灭",
     27: "沉默咒符",
     28: "虚空新星",
@@ -97,6 +105,14 @@ def run_demonhunter_logic(state_dict, spec_name):
     难度 = state_dict.get("难度", 0)
     英雄天赋 = state_dict.get("英雄天赋", 0)
 
+    黑暗_cd = spells.get("黑暗", -1)
+    复仇回避_cd = spells.get("复仇回避", -1)
+    投掷利刃_cd = spells.get("投掷利刃", -1)
+    投掷利刃_charge = spells.get("投掷利刃充能", -1)
+    悲苦咒符_cd = spells.get("悲苦咒符", -1)
+    禁锢_cd = spells.get("禁锢", -1)
+    献祭光环_cd = spells.get("献祭光环", -1)
+
     失败法术 = _get_failed_spell(state_dict)
     tup = action_map.get(一键辅助)
     action_hotkey = None
@@ -116,8 +132,47 @@ def run_demonhunter_logic(state_dict, spec_name):
         else:
             current_step = "无匹配技能"
     elif spec_name == "复仇":
+        灵魂残片 = state_dict.get("灵魂残片", 0)
+        投掷利刃_层数 = state_dict.get("投掷利刃", 0)
+        地狱火撞击_层数 = state_dict.get("地狱火撞击", 0)
+        烈火烙印_层数 = state_dict.get("烈火烙印", 0)
+        破裂_层数 = state_dict.get("破裂", 0)
+
+        敌人人数 = state_dict.get("敌人人数", 0)
+        烈火烙印 = state_dict.get("烈火烙印buff", 0)
+
+        混乱新星_cd = spells.get("混乱新星", -1)
+        恶魔变形_cd = spells.get("恶魔变形", -1)
+        邪能之刃_cd = spells.get("邪能之刃", -1)
+        地狱火撞击_cd = spells.get("地狱火撞击", -1)
+        地狱火撞击_charge = spells.get("地狱火撞击充能", -1)
+        恶魔尖刺_cd = spells.get("恶魔尖刺", -1)
+        烈火烙印_cd = spells.get("烈火烙印", -1)
+        烈火烙印_charge = spells.get("烈火烙印充能", -1)
+        幽魂炸弹_cd = spells.get("幽魂炸弹", -1)
+        灵魂切削_cd = spells.get("灵魂切削", -1)
+        烈焰咒符_cd = spells.get("烈焰咒符", -1)
+        怨念咒符_cd = spells.get("怨念咒符", -1)
+        灵魂裂劈_cd = spells.get("灵魂裂劈", -1)
+        破裂_cd = spells.get("破裂", -1)
+        破裂_charge = spells.get("破裂充能", -1)
+        邪能毁灭_cd = spells.get("邪能毁灭", -1)
+        沉默咒符_cd = spells.get("沉默咒符", -1)
+      
         if 战斗 and 1 <= 目标类型 <= 3:
-            if tup:
+            if 恶魔尖刺_cd == 0:
+                current_step = "施放 恶魔尖刺"
+                action_hotkey = get_hotkey(0, "恶魔尖刺")
+            elif 烈火烙印 == 0 and 烈火烙印_cd == 0:
+                current_step = "施放 烈火烙印"
+                action_hotkey = get_hotkey(0, "烈火烙印")
+            elif not 移动 and 邪能毁灭_cd == 0 and 能量值 >= 50 and( 生命值 <= 80 or 敌人人数 >= 5):
+                current_step = "施放 邪能毁灭"
+                action_hotkey = get_hotkey(0, "邪能毁灭")
+            elif 邪能之刃_cd == 0 and 能量值 <= 20:
+                current_step = "施放 邪能之刃"
+                action_hotkey = get_hotkey(0, "邪能之刃")
+            elif tup:
                 current_step = f"施放 {tup[0]}"
                 action_hotkey = get_hotkey(0, tup[1])
         else:

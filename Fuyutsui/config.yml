@@ -341,6 +341,9 @@ state:
     福音层数: {step: 30, type: "int" }
     祸福相依: {step: 46, type: "int" }
     祸福层数: {step: 47, type: "int" }
+    延迟: {step: 48, type: "int" }
+    大红冷却: {step: 52, type: "int" }
+    
     苦修层数: {step: bar, bar: 1, type: "int"}
     耀层数: {step: bar, bar: 2, type: "int"}
     spells:
@@ -359,7 +362,9 @@ state:
       福音: {step: 43, type: "int" }
       心灵震爆: {step: 44, type: "int" }
       暗言术：灭: {step: 45, type: "int" }
-
+      暗影魔: {step: 49, type: "int" }
+      暗影分流: {step: 50, type: "int" }
+      渐隐术: {step: 51, type: "int" }
     group:
       start: 70
       num: 5
@@ -774,6 +779,7 @@ state:
     活力苏醒: {step: 48, type: "int" }
     目标距离: {step: 49, type: "int" }
     爆发开关: {step: 50, type: "int" }
+    
     spells:
       雷光茶: {step: 31, type: "int" }
       雷光充能: {step: 32, type: "int" }
@@ -804,6 +810,7 @@ state:
   3:
     目标生命值: {step: 21, type: "int" }
     敌人人数: {step: 22, type: "int" }
+    真气: {step: 23, type: "int" }
     spells:
       轮回之触: {step: 31, type: "int" }
       扫堂腿: {step: 32, type: "int" }
@@ -928,7 +935,15 @@ state:
       邪能冲撞: {step: 55, type: "int" }
       精华破碎: {step: 56, type: "int" }
   2:
+    灵魂残片: {step: bar, bar: 1, type: "int"}
+    投掷利刃: {step: bar, bar: 2, type: "int"}
+    地狱火撞击: {step: bar, bar: 3, type: "int"}
+    烈火烙印: {step: bar, bar: 4, type: "int"}
+    破裂: {step: bar, bar: 5, type: "int"}
+
     敌人人数: {step: 21, type: "int" }
+    烈火烙印buff: {step: 22, type: "int" }
+
     spells:
       黑暗: {step: 40, type: "int" }
       复仇回避: {step: 41, type: "int" }

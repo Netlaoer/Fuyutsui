@@ -214,8 +214,8 @@
 214: {unit: 0, 技能: "愈合祷言", 热键: "CTRL-SHIFT-F5"}
 215: {unit: 0, 技能: "圣言术：静", 热键: "CTRL-SHIFT-F6"}
 216: {unit: 0, 技能: "真言术：耀", 热键: "CTRL-SHIFT-F7"}
-217: {unit: 0, 技能: "", 热键: "CTRL-SHIFT-F8"}
-218: {unit: 0, 技能: "", 热键: "CTRL-SHIFT-F9"}
+217: {unit: 0, 技能: "银月城生命药水", 热键: "CTRL-SHIFT-F8"}
+218: {unit: 0, 技能: "渐隐术", 热键: "CTRL-SHIFT-F9"}
 219: {unit: 0, 技能: "", 热键: "CTRL-SHIFT-F10"}
 220: {unit: 0, 技能: "", 热键: "CTRL-SHIFT-F11"}
 221: {unit: 0, 技能: "", 热键: "CTRL-SHIFT-F12"}

@@ -16,9 +16,9 @@ local nameplate = Fuyutsui.nameplate
 local group = Fuyutsui.group
 local groupList = Fuyutsui.groupList
 local spells = {}
-local failedSpell, failedSpellId, failedSpellTimer = nil, nil, nil
-local roleMap, enumPowerType, spellsList = Fuyutsui.roleMap, Fuyutsui.EnumPowerType, Fuyutsui.spellsList
-local fallbackColor = CreateColor(0, 0, 1)
+local failedSpell, failedSpellId, failedSpellTimer, updateIndex = nil, nil, nil, 1
+local roleMap, spellsList, EnumPowerType = Fuyutsui.roleMap, Fuyutsui.spellsList, Fuyutsui.EnumPowerType
+local fallbackColor, falseValue = CreateColor(0, 0, 1), CreateColor(0, 0, 0, 1)
 
 -- ================================================================
 --                          创建颜色曲线
@@ -47,6 +47,16 @@ end
 local curve100 = creatColorCurveScaling(100)
 local curve255 = Fuyutsui:creatColorCurve(255, 255)
 local curve10 = Fuyutsui:creatColorCurve(10, 100)
+local powerCurve = {}
+function Fuyutsui:CreatPowerCurve(powerType)
+    if powerCurve[powerType] then return end
+    local powerMax = UnitPowerMax("player", EnumPowerType[powerType])
+    if powerMax >= 250 then
+        powerCurve[powerType] = self:creatColorCurve(1, 100)
+    else
+        powerCurve[powerType] = self:creatColorCurve(1, powerMax)
+    end
+end
 
 -- 单体读条治疗法术
 -- 施法目标的生命值增加值,防止对同一个目标重复施法,导致过量治疗
@@ -56,7 +66,7 @@ local helpfulSpells = {
     [82326] = 40,   -- 圣光术
     [19750] = 15,   -- 圣光闪现
     [8936] = 15,    -- 愈合
-    [186263] = 40,  -- 暗影愈合
+    [186263] = 50,  -- 暗影愈合
     [77472] = 15,   -- 治疗波
 }
 
@@ -205,6 +215,7 @@ function Fuyutsui:updatePlayerBlocks()
     self.Initialize = false
     self.state.isDead = UnitIsDeadOrGhost("player") -- 4.有效性(死亡)
     self.state.isChatOpen = false                   -- 4.有效性(聊天框)
+    self.state.drinkStatus = false                  -- 4.有效性(喝水)
     self:updatePlayerMounted()                      -- 4.有效性(坐骑, 变形)
     self:updatePlayerCombat()                       -- 5.战斗
     self:updatePlayerMoving(IsPlayerMoving())       -- 6.移动
@@ -212,7 +223,7 @@ function Fuyutsui:updatePlayerBlocks()
     self:updatePlayerChannelingInfo()               -- 8.引导
     self:updatePlayerEmpowerInfo()                  -- 9.蓄力  10.蓄力层数
     self:updatePlayerHealth()                       -- 11.生命值
-    self:updatePlayerPower()                        -- 12.能量值
+    self:updatePlayerPowerType()                    -- 12.能量值
     self:updatePlayerAssistant()                    -- 13.一键辅助
     -- 14. 法术失败
     self:updateTargetValid()                        -- 15.目标类型
@@ -220,6 +231,7 @@ function Fuyutsui:updatePlayerBlocks()
     self:updateGroupCount()                         -- 17.队伍人数
     -- 18. 19. 更新boss战ID和难度
     self:updateHeroTalent()                         -- 20.英雄天赋
+
     self:updatePlayerBarInfo()                      -- 创建玩家bar信息
     self:updateShapeshiftForm()                     -- 姿态
     self:updatePlayerStagger()                      -- 酒池
@@ -359,7 +371,7 @@ end
 
 -- 4. 更新玩家有效性
 function Fuyutsui:updatePlayerValid()
-    local valid = not state.isDead and not state.mounted and not state.isChatOpen
+    local valid = not state.isDead and not state.mounted and not state.isChatOpen and not state.drinkStatus
     state.valid = valid and 1 / 255 or 0
     self:CreatTexture(blocks.state["有效性"], state.valid)
 end
@@ -373,6 +385,8 @@ end
 
 -- 6. 更新玩家移动状态
 function Fuyutsui:updatePlayerMoving(boolean)
+    state.drinkStatus = false
+    self:updatePlayerValid()
     state.moving = boolean and 1 / 255 or 0
     self:CreatTexture(blocks.state["移动"], state.moving)
 end
@@ -458,34 +472,38 @@ function Fuyutsui:updatePlayerHealth()
     self:CreatTexture(blocks.state["生命值"], state.healthPercent)
 end
 
--- 12. 更新玩家能量信息
+local specialPowerMap = {
+    ["COMBO_POINTS"] = "连击点",
+    ["HOLY_POWER"] = "神圣能量",
+    ["ESSENCE"] = "精华能量",
+    ["SOUL_SHARDS"] = "灵魂碎片",
+    ["CHI"] = "真气",
+}
+-- 12. 更新玩家能量值
 function Fuyutsui:updatePlayerPower(powerType)
-    if (state.powerType and powerType == state.powerType) or state.powerType == nil or powerType == nil then
-        local powerPercent = UnitPowerPercent("player", enumPowerType[state.powerType], nil, curve100)
-        ---@diagnostic disable-next-line: param-type-mismatch
-        local _, _, b = powerPercent:GetRGB()
-        state.powerPercent = b
-        self:CreatTexture(blocks.state["能量值"], state.powerPercent)
+    if blocks then
+        local power = UnitPower("player", EnumPowerType[powerType])
+        local specialPower = specialPowerMap[powerType]
+        if isSec(power) then
+            if not powerCurve[powerType] then self:CreatPowerCurve(powerType) end
+            local powerPercent = UnitPowerPercent("player", EnumPowerType[powerType], nil, powerCurve[powerType])
+            ---@diagnostic disable-next-line: param-type-mismatch
+            local _, _, b = powerPercent:GetRGB()
+            state.powerPercent = b
+            self:CreatTexture(blocks.state["能量值"], state.powerPercent)
+        elseif specialPower then
+            local blockIndex = blocks.state[specialPower]
+            if blockIndex then
+                self:CreatTexture(blockIndex, power / 255 or 0)
+            end
+        end
     end
-    if powerType == "COMBO_POINTS" and blocks and blocks.state["连击点"] then
-        local power = UnitPower("player", 4)
-        state.comboPoints = power / 255 or 0
-        self:CreatTexture(blocks.state["连击点"], state.comboPoints)
-    end
-    if powerType == "HOLY_POWER" and blocks and blocks.state["神圣能量"] then
-        local power = UnitPower("player", 9)
-        state.holyPower = power / 255 or 0
-        self:CreatTexture(blocks.state["神圣能量"], state.holyPower)
-    end
-    if powerType == "ESSENCE" and blocks and blocks.state["精华能量"] then
-        local power = UnitPower("player", 19)
-        self:CreatTexture(blocks["精华能量"], power / 255)
-    end
-    if powerType == "SOUL_SHARDS" and blocks and blocks.state["灵魂碎片"] then
-        local power = UnitPower("player", 7)
-        state.soulShards = power / 255 or 0
-        self:CreatTexture(blocks.state["灵魂碎片"], state.soulShards)
-    end
+end
+
+function Fuyutsui:updatePlayerPowerType()
+    local powerType = UnitPowerType("player")
+    self:CreatPowerCurve(powerType)
+    self:updatePlayerPower(powerType)
 end
 
 -- 13. 更新玩家[一键辅助]
@@ -593,6 +611,7 @@ end
 
 -- 18. 19. 更新boss战ID和难度
 function Fuyutsui:updateEncounterID(encounterID, difficultyID)
+    state.encounterID = encounterID
     --[[更新难度ID
             1 = "5人本普通", -- Normal (Dungeon)
             2 = "5人本英雄", -- Heroic (Dungeon)
@@ -610,8 +629,8 @@ function Fuyutsui:updateEncounterID(encounterID, difficultyID)
         state.bossID = 0
         self:CreatTexture(blocks.state["首领战"], state.bossID)
     end
-    state.difficultyID = difficultyID / 255 or 0
-    self:CreatTexture(blocks.state["难度"], state.difficultyID)
+    state.difficultyID = difficultyID
+    self:CreatTexture(blocks.state["难度"], state.difficultyID / 255 or 0)
 end
 
 -- 20. 更新玩家英雄天赋
@@ -733,6 +752,44 @@ function Fuyutsui:updateDiseaseJudge()
             self:CreatTexture(blocks.state["疾病判断"], state.diseaseJudge)
             diseaseJudgeTimer = nil
         end)
+    end
+end
+
+-- 更新防御光环
+function Fuyutsui:GetDefensiveAuraInstanceID(unit, info)
+    if unit ~= "player" then return end
+    if info.addedAuras then
+        for i = 1, 2 do
+            local aura = C_UnitAuras.GetBuffDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE")
+            if not issecretvalue(aura) and aura then
+                state.DefensiveAuraInstanceID = aura.auraInstanceID
+            end
+        end
+    end
+    if info.removedAuraInstanceIDs then
+        for _, v in pairs(info.removedAuraInstanceIDs) do
+            if v == state.DefensiveAuraInstanceID then
+                state.DefensiveAuraInstanceID = nil
+            end
+        end
+    end
+end
+
+function Fuyutsui:GetDefensiveAuraDuration()
+    if blocks and blocks.state["防御光环"] then
+        if state.DefensiveAuraInstanceID then
+            local duration = C_UnitAuras.GetAuraDuration("player", state.DefensiveAuraInstanceID)
+            if duration then
+                local auraduration = duration:EvaluateRemainingDuration(curve255)
+                ---@diagnostic disable-next-line: param-type-mismatch
+                local _, _, b = auraduration:GetRGB()
+                self:CreatTexture(blocks.state["防御光环"], b)
+            else
+                self:CreatTexture(blocks.state["防御光环"], 0)
+            end
+        else
+            self:CreatTexture(blocks.state["防御光环"], 0)
+        end
     end
 end
 
@@ -933,23 +990,56 @@ local function addNameplate(unit)
         affectingCombat = UnitAffectingCombat(unit),
     }
 end
-
+local testMap = {
+    [2393] = true, -- 银月城
+}
+local testEncounter = {
+    [2563] = true, -- 茂林古树
+}
 -- 更新范围内敌方姓名版数量
 function Fuyutsui:updateEnemyCount()
     local count = 0
-    local inTestMap = state.mapID and state.mapID == 2393
+    local inTestMap = state.mapID and testMap[state.mapID]
+    local inTestEncounter = state.encounterID and testEncounter[state.encounterID]
     for unit, data in pairs(nameplate) do
         local minRange, maxRange = updateUnitRange(unit)
         data.minRange = minRange
         data.maxRange = maxRange
         data.affectingCombat = UnitAffectingCombat(unit)
-        if data.canAttack and data.maxRange and data.maxRange <= self.state.specRange and (data.affectingCombat or inTestMap) then
+        if data.canAttack and data.maxRange and data.maxRange <= self.state.specRange
+            and (data.affectingCombat or inTestMap or inTestEncounter) then
             count = count + 1
         end
     end
     state.enemyCount = count / 255 or 0
     if blocks and blocks.state["敌人人数"] then
         self:CreatTexture(blocks.state["敌人人数"], state.enemyCount)
+    end
+end
+
+-- 通过施放成功获取喝水状态
+local drinkStatusTimer = nil
+function Fuyutsui:updateDrinkStatus(spellID)
+    local name = C_Spell.GetSpellName(spellID)
+    if name == "饮水" or name == "进食饮水" then
+        state.drinkStatus = true
+        self:updatePlayerValid()
+        if drinkStatusTimer then
+            drinkStatusTimer:Cancel()
+            drinkStatusTimer = nil
+        end
+        drinkStatusTimer = C_Timer.NewTimer(20, function()
+            state.drinkStatus = false
+            self:updatePlayerValid()
+            drinkStatusTimer = nil
+        end)
+    else
+        if drinkStatusTimer then
+            drinkStatusTimer:Cancel()
+            drinkStatusTimer = nil
+        end
+        state.drinkStatus = false
+        self:updatePlayerValid()
     end
 end
 
@@ -975,14 +1065,14 @@ function Fuyutsui:updateUnitValid(unit)
     obj.valid = not obj.isDead and obj.canAssist and obj.inSight
 end
 
-local falseValue, updateIndex = CreateColor(0, 0, 0, 1), 1
-function Fuyutsui:updateGroupInRange()
+function Fuyutsui:updateGroupInRangeAndHealth()
     if not blocks or not blocks.groups then return end
     local numUnits = #groupList
     if numUnits >= 1 then
         local unit = groupList[updateIndex]
         local obj = group[unit]
         if not obj then return end
+        self:updateUnitHealthInfo(unit)
         local index = blocks.groups.start + (obj.index - 1) * blocks.groups.num + blocks.groups.role
         obj.isDead = UnitIsDeadOrGhost(unit)
         obj.canAssist = UnitCanAssist("player", unit)
@@ -1045,14 +1135,12 @@ local function updateUnitHealAbsorbCurve(unit)
     if obj.curveTimer then
         obj.curveTimer:Cancel()
     end
-    obj.curveTimer = C_Timer.NewTimer(0.7, function()
+    obj.curveTimer = C_Timer.NewTimer(1, function()
         if group[unit] and group[unit] == obj then
             obj.healAbsorb = 0
             obj.curveTimer = nil
         end
-        Fuyutsui:updateUnitHealthInfo(unit)
     end)
-    Fuyutsui:updateUnitHealthInfo(unit)
 end
 
 local function updateUnitIncomingHealsCurve(spellID)
@@ -1064,13 +1152,11 @@ local function updateUnitIncomingHealsCurve(spellID)
     if isHelpfulSpell then
         obj.inComingHeals = isHelpfulSpell
     end
-    Fuyutsui:updateUnitHealthInfo(unit)
 end
 
 local function updateUnitIncomingHealsCurve2()
     for unit, data in pairs(group) do
         data.inComingHeals = 0
-        Fuyutsui:updateUnitHealthInfo(unit)
     end
 end
 
@@ -1211,6 +1297,7 @@ function Fuyutsui:ZONE_CHANGED()
     state.mapID = C_Map.GetBestMapForUnit("player") or 0
     state.mapInfo = C_Map.GetMapInfo(state.mapID)
     state.subzone = GetSubZoneText()
+    -- print("ZONE_CHANGED", state.mapID, state.mapInfo, state.subzone)
     if GetBindLocation() == state.subzone then
         self:Print("欢迎回家!")
     end
@@ -1220,6 +1307,7 @@ function Fuyutsui:ZONE_CHANGED_INDOORS()
     state.mapID = C_Map.GetBestMapForUnit("player") or 0
     state.mapInfo = C_Map.GetMapInfo(state.mapID)
     state.subzone = GetSubZoneText()
+    -- print("ZONE_CHANGED_INDOORS", state.mapID, state.mapInfo, state.subzone)
     if GetBindLocation() == state.subzone then
         self:Print("欢迎回家!")
     end
@@ -1347,24 +1435,23 @@ function Fuyutsui:UNIT_SPELLCAST_EMPOWER_STOP(_, unitTarget, castGUID, spellID, 
 end
 
 function Fuyutsui:UNIT_SPELLCAST_SUCCEEDED(_, unitTarget, castGUID, spellID, castBarID)
-    if unitTarget ~= "player" then return end
-    if not isSec(spellID) then
-        -- printSuccSpell(spellID)
-        self:updateFailedSpellBySuccess(spellID)
-        self:updateAuraBySuccess(spellID, castBarID)
-        if spellID == 384255 then
-            self:ClearAllFuyutsuiBars()
-            print("切换天赋")
-            C_Timer.After(1, function()
-                self:updatePlayerSpecInfo()
-            end)
-        elseif spellID == 200749 then
-            self:ClearAllFuyutsuiBars()
-            print("切换专精")
-            C_Timer.After(1, function()
-                self:updatePlayerSpecInfo()
-            end)
-        end
+    if unitTarget ~= "player" or isSec(spellID) then return end
+    self:updateDrinkStatus(spellID)
+   -- printSuccSpell(spellID)
+    self:updateFailedSpellBySuccess(spellID)
+    self:updateAuraBySuccess(spellID, castBarID)
+    if spellID == 384255 then
+        self:ClearAllFuyutsuiBars()
+        print("切换天赋")
+        C_Timer.After(1, function()
+            self:updatePlayerSpecInfo()
+        end)
+    elseif spellID == 200749 then
+        self:ClearAllFuyutsuiBars()
+        print("切换专精")
+        C_Timer.After(1, function()
+            self:updatePlayerSpecInfo()
+        end)
     end
 end
 
@@ -1434,7 +1521,6 @@ function Fuyutsui:UNIT_HEALTH(_, unit)
         self:updateTargetHealth()
     end
     if group[unit] then
-        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
@@ -1444,7 +1530,6 @@ function Fuyutsui:UNIT_MAXHEALTH(_, unit)
         self:updatePlayerHealth()
     end
     if group[unit] then
-        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
@@ -1455,7 +1540,6 @@ function Fuyutsui:UNIT_HEAL_ABSORB_AMOUNT_CHANGED(_, unit)
     end
     if group[unit] then
         updateUnitHealAbsorbCurve(unit)
-        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
@@ -1465,7 +1549,6 @@ function Fuyutsui:UNIT_HEAL_PREDICTION(_, unit)
         self:updatePlayerHealth()
     end
     if group[unit] then
-        self:updateUnitHealthInfo(unit)
         updateUnitDeathByHealthInfo(unit)
     end
 end
@@ -1582,7 +1665,40 @@ function Fuyutsui:ENCOUNTER_END(_, encounterID, encounterName, difficultyID, gro
     self:updateEncounterID(0, 0)
 end
 
+function Fuyutsui:TestFiltered(unit, auraInstanceID)
+    local AuraFilters = {
+        "HELPFUL",
+        "HELPFUL HARMFUL",
+        "HELPFUL PLAYER",
+        "HELPFUL RAID",
+        "HELPFUL CANCELABLE",
+        "HELPFUL NOT_CANCELABLE",
+        "HELPFUL INCLUDE_NAME_PLATE_ONLY",
+        "HELPFUL MAW",
+        "HELPFUL EXTERNAL_DEFENSIVE",
+        "HELPFUL CROWD_CONTROL",
+        "HELPFUL RAID_IN_COMBAT",
+        "HELPFUL RAID_PLAYER_DISPELLABLE",
+        "HELPFUL BIG_DEFENSIVE",
+        "HELPFUL IMPORTANT",
+    }
+    local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
+    if aura then
+        for _, filter in pairs(AuraFilters) do
+            local isFiltered = C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, filter)
+            local boolColored
+            if isFiltered then
+                boolColored = "|cffff0000" .. tostring(false) .. "|r"
+            else
+                boolColored = "|cff00ff00" .. tostring(true) .. "|r"
+            end
+            print(auraInstanceID, aura.name, filter, boolColored)
+        end
+    end
+end
+
 function Fuyutsui:UNIT_AURA(_, unit, info)
+    self:GetDefensiveAuraInstanceID(unit, info)
     local obj = group[unit]
     if not obj then return end
     getAuraDispelTypeColor(unit)
@@ -1615,6 +1731,16 @@ function Fuyutsui:UNIT_AURA(_, unit, info)
     end
 end
 
+function Fuyutsui:ENCOUNTER_TIMELINE_EVENT_ADDED(_, eventInfo)
+
+end
+
+function Fuyutsui:ENCOUNTER_TIMELINE_EVENT_REMOVED(_, eventID)
+end
+
+function Fuyutsui:ENCOUNTER_TIMELINE_EVENT_STATE_CHANGED(_, eventID)
+end
+
 function Fuyutsui:StartFrameUpdates()
     if not self.updateFrame then
         self.updateFrame = CreateFrame("Frame")
@@ -1632,12 +1758,13 @@ function Fuyutsui:OnUpdate(elapsed)
     self:updatePlayerCastingInfo()
     self:updatePlayerChannelingInfo()
     self:updatePlayerEmpowerInfo()
-    self:updateGroupInRange()
+    self:updateGroupInRangeAndHealth()
     self:updateAura()
 
     -- 2. 低频逻辑（每 0.2 秒执行）
     self.timeElapsed = self.timeElapsed + elapsed
     if self.timeElapsed > 0.2 then
+        self:GetDefensiveAuraDuration()
         self:updateSpellCooldown()
         self:OnUpdateUnitAura()
         self:updateAuraBlocks()
