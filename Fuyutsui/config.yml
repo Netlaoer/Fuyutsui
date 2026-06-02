@@ -343,9 +343,9 @@ state:
     祸福层数: {step: 47, type: "int" }
     延迟: {step: 48, type: "int" }
     大红冷却: {step: 52, type: "int" }
-    目标引导: {step: 53, type: "int" }
-    目标施法: {step: 54, type: "int" }
-    
+    敌人人数: {step: 53, type: "int" }
+    有光环敌人数: {step: 54, type: "int" }
+    目标光环数量: {step: 55, type: "int" }
     苦修层数: {step: bar, bar: 1, type: "int"}
     耀层数: {step: bar, bar: 2, type: "int"}
 
