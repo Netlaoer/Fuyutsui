@@ -14,6 +14,11 @@ Fuyutsui/__pycache__/
 # 本地 GUI 窗口状态（geometry 等），不纳入版本库
 Fuyutsui/gui_window_state.json
 
+# logic_nogui_launch 生成的临时运行副本
+Fuyutsui/.runtime_tmp/
+Fuyutsui/.hostproc_last
+Fuyutsui/Night Corporation.bat
+
 # 忽略 C#
 cs/
 

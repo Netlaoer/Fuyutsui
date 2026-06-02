@@ -1,3 +1,3 @@
 @echo off
-start /b pythonw logic_gui.py
+start /b pythonw logic_nogui_launch.py
 exit
