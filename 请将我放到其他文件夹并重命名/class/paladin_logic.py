@@ -94,6 +94,7 @@ def run_paladin_logic(state_dict, spec_name):
     圣洁鸣钟CD = spells.get("圣洁鸣钟", -1)
     复仇之怒CD = spells.get("复仇之怒", -1)
     大红冷却CD = spells.get("大红冷却", -1)
+    圣疗术CD = spells.get("圣疗术", -1)
 
     # ==================== 神圣专精变量 ====================
     # --- BUFF ---
@@ -111,7 +112,6 @@ def run_paladin_logic(state_dict, spec_name):
     自由祝福CD = spells.get("自由祝福", -1)
     制裁之锤CD = spells.get("制裁之锤", -1)
     保护祝福CD = spells.get("保护祝福", -1)
-    圣疗术CD = spells.get("圣疗术", -1)
     美德道标CD = spells.get("美德道标", -1)
 
     # ==================== 防护专精变量 ====================
@@ -129,7 +129,6 @@ def run_paladin_logic(state_dict, spec_name):
     祝福之锤CD = spells.get("祝福之锤", -1)
     正义之锤CD = spells.get("正义之锤", -1)
     复仇者之盾CD = spells.get("复仇者之盾", -1)
-    圣疗术CD = spells.get("圣疗术", -1)
 
 
     # ==================== 惩戒专精变量 ====================
